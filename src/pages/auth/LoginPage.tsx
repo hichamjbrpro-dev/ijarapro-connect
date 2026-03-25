@@ -48,7 +48,7 @@ const LoginPage = () => {
                 <Input type="password" placeholder="••••••••" className="h-10" dir="ltr" />
               </div>
               <button type="button" className="text-xs text-accent hover:underline">{t.forgot_password}</button>
-              <Button className="w-full h-10 bg-primary hover:bg-primary-light text-primary-foreground">{t.login_btn}</Button>
+              <Button type="button" onClick={handleLogin} className="w-full h-10 bg-primary hover:bg-primary-light text-primary-foreground">{t.login_btn}</Button>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
