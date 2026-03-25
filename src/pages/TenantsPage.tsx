@@ -205,6 +205,7 @@ const TenantsPage = () => {
                 <TableHead className="text-right">{t.full_name}</TableHead>
                 <TableHead className="text-right">{t.cin_number}</TableHead>
                 <TableHead className="text-right">{t.phone}</TableHead>
+                <TableHead className="text-right">{t.property}</TableHead>
                 <TableHead className="text-right">{t.unit}</TableHead>
                 <TableHead className="text-right">{t.move_in_date}</TableHead>
                 <TableHead className="text-center w-[100px]">{t.actions}</TableHead>
@@ -213,11 +214,13 @@ const TenantsPage = () => {
             <TableBody>
               {filtered.map((tenant) => {
                 const unit = mockUnits.find((u) => u.id === tenant.unit_id);
+                const property = unit ? mockProperties.find((p) => p.id === unit.property_id) : null;
                 return (
                   <TableRow key={tenant.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tenants/${tenant.id}`)}>
                     <TableCell className="font-medium text-primary hover:underline">{tenant.full_name}</TableCell>
                     <TableCell className="font-latin text-muted-foreground">{tenant.cin || '—'}</TableCell>
                     <TableCell className="font-latin text-muted-foreground" dir="ltr">{tenant.phone || '—'}</TableCell>
+                    <TableCell className="text-muted-foreground">{property?.name || '—'}</TableCell>
                     <TableCell>{unit?.unit_number || '—'}</TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(tenant.move_in_date)}</TableCell>
                     <TableCell>
