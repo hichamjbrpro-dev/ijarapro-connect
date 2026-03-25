@@ -133,6 +133,9 @@ export const translations = {
     add_new_contract: 'إضافة عقد جديد',
     select_tenant: 'اختر المستأجر',
     no_tenants_without_contract: 'جميع المستأجرين لديهم عقود',
+    edit_contract: 'تعديل العقد',
+    delete_contract: 'حذف العقد',
+    confirm_delete_contract: 'هل أنت متأكد من حذف هذا العقد؟',
 
     // Notifications
     notifications_title: 'التنبيهات',
