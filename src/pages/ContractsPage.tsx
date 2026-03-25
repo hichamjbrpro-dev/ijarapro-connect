@@ -252,6 +252,16 @@ const ContractsPage = () => {
                   {t.upload_contract}
                 </Button>
               </div>
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleEditClick(contract)}>
+                  <Pencil className="w-3 h-3 ml-1" />
+                  {t.edit_contract}
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 text-xs text-destructive hover:bg-destructive/10" onClick={() => handleDeleteContract(contract.id)}>
+                  <Trash2 className="w-3 h-3 ml-1" />
+                  {t.delete_contract}
+                </Button>
+              </div>
             </div>
           );
         })}
