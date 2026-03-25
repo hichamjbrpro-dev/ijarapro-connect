@@ -230,6 +230,26 @@ const ContractsPage = () => {
           ))}
         </div>
       </div>
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <Button
+          variant={propertyFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setPropertyFilter('all')}
+          className="text-xs"
+        >
+          {t.filter_all}
+        </Button>
+        {mockProperties.map(p => (
+          <Button
+            key={p.id}
+            variant={propertyFilter === p.id ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPropertyFilter(p.id)}
+            className="text-xs"
+          >
+            {p.name}
+          </Button>
+        ))}
 
       {(() => {
         const filtered = contracts.filter(contract => {
