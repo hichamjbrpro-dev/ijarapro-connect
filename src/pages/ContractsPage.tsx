@@ -412,25 +412,46 @@ const ContractsPage = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t.select_tenant}</Label>
-              <Select value={newTenantId} onValueChange={setNewTenantId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.select_tenant} />
-                </SelectTrigger>
-                <SelectContent>
-                  {tenantsWithoutContracts.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground text-center">{t.no_tenants_without_contract}</div>
-                  ) : (
-                    tenantsWithoutContracts.map(tenant => {
-                      const unit = mockUnits.find(u => u.id === tenant.unit_id);
-                      return (
-                        <SelectItem key={tenant.id} value={tenant.id}>
-                          {tenant.full_name} — {t.unit} {unit?.unit_number}
-                        </SelectItem>
-                      );
-                    })
-                  )}
-                </SelectContent>
-              </Select>
+              <Popover open={tenantPopoverOpen} onOpenChange={setTenantPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
+                    {newTenantId
+                      ? (() => {
+                          const tn = mockTenants.find(t => t.id === newTenantId);
+                          const u = mockUnits.find(u => u.id === tn?.unit_id);
+                          return `${tn?.full_name} — ${t.unit} ${u?.unit_number}`;
+                        })()
+                      : t.select_tenant}
+                    <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder={t.search_name_cin} />
+                    <CommandList>
+                      <CommandEmpty>{t.no_tenants_without_contract}</CommandEmpty>
+                      <CommandGroup>
+                        {tenantsWithoutContracts.map(tenant => {
+                          const unit = mockUnits.find(u => u.id === tenant.unit_id);
+                          return (
+                            <CommandItem
+                              key={tenant.id}
+                              value={tenant.full_name}
+                              onSelect={() => {
+                                setNewTenantId(tenant.id);
+                                setTenantPopoverOpen(false);
+                              }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", newTenantId === tenant.id ? "opacity-100" : "opacity-0")} />
+                              {tenant.full_name} — {t.unit} {unit?.unit_number}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
