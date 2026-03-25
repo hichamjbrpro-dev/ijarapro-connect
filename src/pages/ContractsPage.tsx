@@ -28,7 +28,9 @@ const ContractsPage = () => {
   const [contracts, setContracts] = useState<Contract[]>(mockContracts);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string; url: string }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
