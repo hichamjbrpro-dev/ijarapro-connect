@@ -5,10 +5,10 @@ import MobileNav from './MobileNav';
 import { useUIStore } from '@/store/uiStore';
 
 const AppLayout = () => {
-  const { sidebarOpen } = useUIStore();
+  const { sidebarOpen, language } = useUIStore();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <AppSidebar />
       <div
         className={`transition-all duration-200 ${
