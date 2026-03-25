@@ -146,11 +146,11 @@ const ContractsPage = () => {
 
     setContracts(prev => [...prev, newContract]);
 
-    if (newFile) {
-      const url = URL.createObjectURL(newFile);
+    if (newFiles.length > 0) {
+      const fileEntries = newFiles.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
       setUploadedFiles(prev => ({
         ...prev,
-        [newContract.id]: { name: newFile.name, url }
+        [newContract.id]: fileEntries
       }));
     }
 
@@ -159,7 +159,7 @@ const ContractsPage = () => {
     setNewTenantId('');
     setNewStartDate('');
     setNewEndDate('');
-    setNewFile(null);
+    setNewFiles([]);
     if (addFileInputRef.current) addFileInputRef.current.value = '';
   };
 
