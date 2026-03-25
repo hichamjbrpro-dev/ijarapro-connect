@@ -10,6 +10,7 @@ import TenantsPage from "@/pages/TenantsPage";
 import PaymentsPage from "@/pages/PaymentsPage";
 import ContractsPage from "@/pages/ContractsPage";
 import NotificationsPage from "@/pages/NotificationsPage";
+import TenantDetailPage from "@/pages/TenantDetailPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import NotFound from "@/pages/NotFound";
 import { useAuthStore } from "@/store/authStore";
