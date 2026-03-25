@@ -290,6 +290,10 @@ export const translations = {
     status_active: 'Actif',
     download: 'Télécharger',
     upload_contract: 'Téléverser',
+    add_contract: 'Ajouter un contrat',
+    add_new_contract: 'Nouveau contrat',
+    select_tenant: 'Sélectionner un locataire',
+    no_tenants_without_contract: 'Tous les locataires ont des contrats',
 
     notifications_title: 'Notifications',
     unread_count: (n: number) => `${n} non lue${n > 1 ? 's' : ''}`,
