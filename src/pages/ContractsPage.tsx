@@ -106,12 +106,14 @@ const ContractsPage = () => {
   };
 
   const handleDownload = (contractId: string) => {
-    const uploaded = uploadedFiles[contractId];
-    if (uploaded) {
-      const a = document.createElement('a');
-      a.href = uploaded.url;
-      a.download = uploaded.name;
-      a.click();
+    const files = uploadedFiles[contractId];
+    if (files && files.length > 0) {
+      files.forEach(f => {
+        const a = document.createElement('a');
+        a.href = f.url;
+        a.download = f.name;
+        a.click();
+      });
     } else {
       toast.info(t.download + ': ' + t.upload_contract);
     }
