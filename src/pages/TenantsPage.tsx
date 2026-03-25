@@ -1,20 +1,25 @@
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import PageHeader from '@/components/shared/PageHeader';
 import { mockTenants, mockUnits, mockProperties } from '@/data/mockData';
 import { formatDate } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { Tenant } from '@/types';
 
 const TenantsPage = () => {
   const [search, setSearch] = useState('');
+  const [tenants, setTenants] = useState<Tenant[]>(mockTenants);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [newTenant, setNewTenant] = useState({
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
+  const [formData, setFormData] = useState({
     full_name: '',
     cin: '',
     phone: '',
@@ -22,20 +27,66 @@ const TenantsPage = () => {
     unit_id: '',
   });
 
-  const filtered = mockTenants.filter((t) =>
+  const filtered = tenants.filter((t) =>
     t.full_name.includes(search) || t.cin.toLowerCase().includes(search.toLowerCase())
   );
 
   const vacantUnits = mockUnits.filter((u) => u.status === 'vacant');
 
+  const openAddSheet = () => {
+    setEditingTenant(null);
+    setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
+    setSheetOpen(true);
+  };
+
+  const openEditSheet = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    setFormData({
+      full_name: tenant.full_name,
+      cin: tenant.cin,
+      phone: tenant.phone,
+      email: tenant.email || '',
+      unit_id: tenant.unit_id,
+    });
+    setSheetOpen(true);
+  };
+
   const handleSave = () => {
-    if (!newTenant.full_name || !newTenant.cin) {
+    if (!formData.full_name || !formData.cin) {
       toast.error('يرجى ملء الاسم الكامل ورقم CIN');
       return;
     }
-    toast.success(`تمت إضافة المستأجر "${newTenant.full_name}" بنجاح`);
-    setNewTenant({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
+
+    if (editingTenant) {
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === editingTenant.id
+            ? { ...t, ...formData }
+            : t
+        )
+      );
+      toast.success(`تم تعديل بيانات "${formData.full_name}" بنجاح`);
+    } else {
+      const newTenant: Tenant = {
+        id: `t-new-${Date.now()}`,
+        owner_id: '1',
+        ...formData,
+        move_in_date: new Date().toISOString().split('T')[0],
+      };
+      setTenants((prev) => [...prev, newTenant]);
+      toast.success(`تمت إضافة المستأجر "${formData.full_name}" بنجاح`);
+    }
+
+    setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
+    setEditingTenant(null);
     setSheetOpen(false);
+  };
+
+  const handleDelete = () => {
+    if (!deletingTenant) return;
+    setTenants((prev) => prev.filter((t) => t.id !== deletingTenant.id));
+    toast.success(`تم حذف المستأجر "${deletingTenant.full_name}" بنجاح`);
+    setDeletingTenant(null);
   };
 
   const getUnitLabel = (unitId: string) => {
@@ -45,27 +96,33 @@ const TenantsPage = () => {
     return `${prop?.name} - وحدة ${unit.unit_number}`;
   };
 
+  const availableUnits = editingTenant
+    ? [...vacantUnits, ...mockUnits.filter((u) => u.id === editingTenant.unit_id)]
+    : vacantUnits;
+
   return (
     <div className="animate-fade-in">
-      <PageHeader title="المستأجرون" subtitle={`${mockTenants.length} مستأجر`}>
+      <PageHeader title="المستأجرون" subtitle={`${tenants.length} مستأجر`}>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
-            <Button className="bg-primary hover:bg-primary-light text-primary-foreground">
+            <Button className="bg-primary hover:bg-primary-light text-primary-foreground" onClick={openAddSheet}>
               <Plus className="w-4 h-4 ml-2" />
               إضافة مستأجر
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
             <SheetHeader>
-              <SheetTitle className="text-right">إضافة مستأجر جديد</SheetTitle>
+              <SheetTitle className="text-right">
+                {editingTenant ? 'تعديل بيانات المستأجر' : 'إضافة مستأجر جديد'}
+              </SheetTitle>
             </SheetHeader>
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
                 <Label className="text-right block">الاسم الكامل *</Label>
                 <Input
                   placeholder="أدخل الاسم الكامل"
-                  value={newTenant.full_name}
-                  onChange={(e) => setNewTenant({ ...newTenant, full_name: e.target.value })}
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                   className="h-10 text-right"
                 />
               </div>
@@ -73,8 +130,8 @@ const TenantsPage = () => {
                 <Label className="text-right block">رقم CIN *</Label>
                 <Input
                   placeholder="مثال: BK123456"
-                  value={newTenant.cin}
-                  onChange={(e) => setNewTenant({ ...newTenant, cin: e.target.value })}
+                  value={formData.cin}
+                  onChange={(e) => setFormData({ ...formData, cin: e.target.value })}
                   className="h-10 text-right font-latin"
                   dir="ltr"
                 />
@@ -83,8 +140,8 @@ const TenantsPage = () => {
                 <Label className="text-right block">الهاتف</Label>
                 <Input
                   placeholder="+212600000000"
-                  value={newTenant.phone}
-                  onChange={(e) => setNewTenant({ ...newTenant, phone: e.target.value })}
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="h-10 font-latin"
                   dir="ltr"
                 />
@@ -93,8 +150,8 @@ const TenantsPage = () => {
                 <Label className="text-right block">البريد الإلكتروني</Label>
                 <Input
                   placeholder="email@example.com"
-                  value={newTenant.email}
-                  onChange={(e) => setNewTenant({ ...newTenant, email: e.target.value })}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="h-10 font-latin"
                   dir="ltr"
                   type="email"
@@ -102,13 +159,13 @@ const TenantsPage = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-right block">الوحدة</Label>
-                {vacantUnits.length > 0 ? (
-                  <Select value={newTenant.unit_id} onValueChange={(v) => setNewTenant({ ...newTenant, unit_id: v })}>
+                {availableUnits.length > 0 ? (
+                  <Select value={formData.unit_id} onValueChange={(v) => setFormData({ ...formData, unit_id: v })}>
                     <SelectTrigger className="h-10">
-                      <SelectValue placeholder="اختر وحدة شاغرة" />
+                      <SelectValue placeholder="اختر وحدة" />
                     </SelectTrigger>
                     <SelectContent>
-                      {vacantUnits.map((u) => (
+                      {availableUnits.map((u) => (
                         <SelectItem key={u.id} value={u.id}>
                           {getUnitLabel(u.id)}
                         </SelectItem>
@@ -125,7 +182,7 @@ const TenantsPage = () => {
                 className="w-full bg-primary hover:bg-primary-light text-primary-foreground mt-4"
                 onClick={handleSave}
               >
-                حفظ المستأجر
+                {editingTenant ? 'حفظ التعديلات' : 'حفظ المستأجر'}
               </Button>
             </div>
           </SheetContent>
@@ -152,6 +209,7 @@ const TenantsPage = () => {
                 <TableHead className="text-right">الهاتف</TableHead>
                 <TableHead className="text-right">الوحدة</TableHead>
                 <TableHead className="text-right">تاريخ الدخول</TableHead>
+                <TableHead className="text-center w-[100px]">إجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -164,6 +222,26 @@ const TenantsPage = () => {
                     <TableCell className="font-latin text-muted-foreground" dir="ltr">{tenant.phone || '—'}</TableCell>
                     <TableCell>{unit?.unit_number || '—'}</TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(tenant.move_in_date)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => openEditSheet(tenant)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeletingTenant(tenant)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -171,6 +249,26 @@ const TenantsPage = () => {
           </Table>
         </div>
       </div>
+
+      <AlertDialog open={!!deletingTenant} onOpenChange={(open) => !open && setDeletingTenant(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right">تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              هل أنت متأكد من حذف المستأجر "{deletingTenant?.full_name}"؟ لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse gap-2">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
