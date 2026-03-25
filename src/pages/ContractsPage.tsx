@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PageHeader from '@/components/shared/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
-import { mockContracts, mockTenants, mockUnits } from '@/data/mockData';
+import { mockContracts, mockTenants, mockUnits, mockProperties } from '@/data/mockData';
 import { formatDate } from '@/utils/formatters';
 import { toast } from 'sonner';
 import {
