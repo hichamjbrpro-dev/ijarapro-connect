@@ -156,6 +156,36 @@ const ContractsPage = () => {
     if (addFileInputRef.current) addFileInputRef.current.value = '';
   };
 
+  const handleEditClick = (contract: Contract) => {
+    setEditingContract(contract);
+    setNewStartDate(contract.start_date);
+    setNewEndDate(contract.end_date);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditContract = () => {
+    if (!editingContract || !newStartDate || !newEndDate) return;
+    const days = calcDaysRemaining(newEndDate);
+    setContracts(prev => prev.map(c =>
+      c.id === editingContract.id
+        ? { ...c, start_date: newStartDate, end_date: newEndDate, days_remaining: days }
+        : c
+    ));
+    toast.success(t.edit_contract + ' ✓');
+    setEditDialogOpen(false);
+    setEditingContract(null);
+    setNewStartDate('');
+    setNewEndDate('');
+  };
+
+  const handleDeleteContract = (contractId: string) => {
+    if (!confirm(t.confirm_delete_contract)) return;
+    setContracts(prev => prev.filter(c => c.id !== contractId));
+    const { [contractId]: _, ...rest } = uploadedFiles;
+    setUploadedFiles(rest);
+    toast.success(t.delete_contract + ' ✓');
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title={t.contracts_title} subtitle={t.contracts_count(contracts.length)}>
