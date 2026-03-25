@@ -41,6 +41,10 @@ const ContractsPage = () => {
   const [newEndDate, setNewEndDate] = useState('');
   const [newFile, setNewFile] = useState<File | null>(null);
 
+  // Search & filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
+
   // Tenants without contracts
   const tenantsWithContracts = new Set(contracts.map(c => c.tenant_id));
   const tenantsWithoutContracts = mockTenants.filter(t => !tenantsWithContracts.has(t.id));
