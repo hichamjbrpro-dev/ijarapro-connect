@@ -94,7 +94,7 @@ const ContractsPage = () => {
     const url = URL.createObjectURL(file);
     setUploadedFiles(prev => ({
       ...prev,
-      [selectedContractId]: { name: file.name, url }
+      [selectedContractId]: [...(prev[selectedContractId] || []), { name: file.name, url }]
     }));
 
     toast.success(t.upload_contract + ' ✓');
