@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Building2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useAuthStore } from '@/store/authStore';
 
 const LoginPage = () => {
   const [tab, setTab] = useState<'login' | 'register'>('login');
