@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import PageHeader from '@/components/shared/PageHeader';
+import { useTranslation } from '@/hooks/useTranslation';
 import { mockTenants, mockUnits, mockProperties } from '@/data/mockData';
 import { formatDate } from '@/utils/formatters';
 import { toast } from 'sonner';
@@ -16,6 +17,7 @@ import { Tenant } from '@/types';
 
 const TenantsPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [tenants, setTenants] = useState<Tenant[]>(mockTenants);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -25,15 +27,11 @@ const TenantsPage = () => {
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
-    full_name: '',
-    cin: '',
-    phone: '',
-    email: '',
-    unit_id: '',
+    full_name: '', cin: '', phone: '', email: '', unit_id: '',
   });
 
-  const filtered = tenants.filter((t) =>
-    t.full_name.includes(search) || t.cin.toLowerCase().includes(search.toLowerCase())
+  const filtered = tenants.filter((tenant) =>
+    tenant.full_name.includes(search) || tenant.cin.toLowerCase().includes(search.toLowerCase())
   );
 
   const vacantUnits = mockUnits.filter((u) => u.status === 'vacant');
@@ -49,19 +47,15 @@ const TenantsPage = () => {
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      toast.error('يرجى اختيار صورة (JPG, PNG, WebP) أو ملف PDF');
+      toast.error(t.file_type_error);
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('حجم الملف يجب أن لا يتجاوز 10 ميغابايت');
+      toast.error(t.file_size_error);
       return;
     }
     setAttachedFile(file);
-    if (file.type.startsWith('image/')) {
-      setFilePreview(URL.createObjectURL(file));
-    } else {
-      setFilePreview(null);
-    }
+    setFilePreview(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
   };
 
   const openAddSheet = () => {
@@ -73,43 +67,24 @@ const TenantsPage = () => {
 
   const openEditSheet = (tenant: Tenant) => {
     setEditingTenant(tenant);
-    setFormData({
-      full_name: tenant.full_name,
-      cin: tenant.cin,
-      phone: tenant.phone,
-      email: tenant.email || '',
-      unit_id: tenant.unit_id,
-    });
+    setFormData({ full_name: tenant.full_name, cin: tenant.cin, phone: tenant.phone, email: tenant.email || '', unit_id: tenant.unit_id });
     clearFile();
     setSheetOpen(true);
   };
 
   const handleSave = () => {
     if (!formData.full_name || !formData.cin) {
-      toast.error('يرجى ملء الاسم الكامل ورقم CIN');
+      toast.error(t.fill_required);
       return;
     }
-
     if (editingTenant) {
-      setTenants((prev) =>
-        prev.map((t) =>
-          t.id === editingTenant.id
-            ? { ...t, ...formData }
-            : t
-        )
-      );
-      toast.success(`تم تعديل بيانات "${formData.full_name}" بنجاح`);
+      setTenants((prev) => prev.map((tenant) => tenant.id === editingTenant.id ? { ...tenant, ...formData } : tenant));
+      toast.success(t.tenant_updated(formData.full_name));
     } else {
-      const newTenant: Tenant = {
-        id: `t-new-${Date.now()}`,
-        owner_id: '1',
-        ...formData,
-        move_in_date: new Date().toISOString().split('T')[0],
-      };
+      const newTenant: Tenant = { id: `t-new-${Date.now()}`, owner_id: '1', ...formData, move_in_date: new Date().toISOString().split('T')[0] };
       setTenants((prev) => [...prev, newTenant]);
-      toast.success(`تمت إضافة المستأجر "${formData.full_name}" بنجاح`);
+      toast.success(t.tenant_added(formData.full_name));
     }
-
     setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
     setEditingTenant(null);
     setSheetOpen(false);
@@ -117,8 +92,8 @@ const TenantsPage = () => {
 
   const handleDelete = () => {
     if (!deletingTenant) return;
-    setTenants((prev) => prev.filter((t) => t.id !== deletingTenant.id));
-    toast.success(`تم حذف المستأجر "${deletingTenant.full_name}" بنجاح`);
+    setTenants((prev) => prev.filter((tenant) => tenant.id !== deletingTenant.id));
+    toast.success(t.tenant_deleted(deletingTenant.full_name));
     setDeletingTenant(null);
   };
 
@@ -126,7 +101,7 @@ const TenantsPage = () => {
     const unit = mockUnits.find((u) => u.id === unitId);
     if (!unit) return '';
     const prop = mockProperties.find((p) => p.id === unit.property_id);
-    return `${prop?.name} - وحدة ${unit.unit_number}`;
+    return `${prop?.name} - ${t.unit} ${unit.unit_number}`;
   };
 
   const availableUnits = editingTenant
@@ -135,106 +110,65 @@ const TenantsPage = () => {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="المستأجرون" subtitle={`${tenants.length} مستأجر`}>
+      <PageHeader title={t.tenants_title} subtitle={t.tenants_count(tenants.length)}>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button className="bg-primary hover:bg-primary-light text-primary-foreground" onClick={openAddSheet}>
               <Plus className="w-4 h-4 ml-2" />
-              إضافة مستأجر
+              {t.add_tenant}
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
             <SheetHeader>
               <SheetTitle className="text-right">
-                {editingTenant ? 'تعديل بيانات المستأجر' : 'إضافة مستأجر جديد'}
+                {editingTenant ? t.edit_tenant : t.add_new_tenant}
               </SheetTitle>
             </SheetHeader>
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
-                <Label className="text-right block">الاسم الكامل *</Label>
-                <Input
-                  placeholder="أدخل الاسم الكامل"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="h-10 text-right"
-                />
+                <Label className="text-right block">{t.full_name} *</Label>
+                <Input placeholder={t.enter_full_name} value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} className="h-10 text-right" />
               </div>
               <div className="space-y-2">
-                <Label className="text-right block">رقم CIN *</Label>
-                <Input
-                  placeholder="مثال: BK123456"
-                  value={formData.cin}
-                  onChange={(e) => setFormData({ ...formData, cin: e.target.value })}
-                  className="h-10 text-right font-latin"
-                  dir="ltr"
-                />
+                <Label className="text-right block">{t.cin_number} *</Label>
+                <Input placeholder={t.cin_example} value={formData.cin} onChange={(e) => setFormData({ ...formData, cin: e.target.value })} className="h-10 text-right font-latin" dir="ltr" />
               </div>
               <div className="space-y-2">
-                <Label className="text-right block">الهاتف</Label>
-                <Input
-                  placeholder="+212600000000"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="h-10 font-latin"
-                  dir="ltr"
-                />
+                <Label className="text-right block">{t.phone}</Label>
+                <Input placeholder="+212600000000" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="h-10 font-latin" dir="ltr" />
               </div>
               <div className="space-y-2">
-                <Label className="text-right block">البريد الإلكتروني</Label>
-                <Input
-                  placeholder="email@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="h-10 font-latin"
-                  dir="ltr"
-                  type="email"
-                />
+                <Label className="text-right block">{t.email}</Label>
+                <Input placeholder="email@example.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="h-10 font-latin" dir="ltr" type="email" />
               </div>
               <div className="space-y-2">
-                <Label className="text-right block">الوحدة</Label>
+                <Label className="text-right block">{t.unit}</Label>
                 {availableUnits.length > 0 ? (
                   <Select value={formData.unit_id} onValueChange={(v) => setFormData({ ...formData, unit_id: v })}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="اختر وحدة" />
-                    </SelectTrigger>
+                    <SelectTrigger className="h-10"><SelectValue placeholder={t.select_unit} /></SelectTrigger>
                     <SelectContent>
                       {availableUnits.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>
-                          {getUnitLabel(u.id)}
-                        </SelectItem>
+                        <SelectItem key={u.id} value={u.id}>{getUnitLabel(u.id)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">
-                    لا توجد وحدات شاغرة حالياً
-                  </p>
+                  <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">{t.no_vacant_units}</p>
                 )}
               </div>
-              {/* File Upload */}
               <div className="space-y-2">
-                <Label className="text-right block">مستند (صورة أو PDF)</Label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                <Label className="text-right block">{t.document_upload}</Label>
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handleFileChange} className="hidden" />
                 {!attachedFile ? (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer"
-                  >
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer">
                     <Upload className="w-8 h-8" />
-                    <span className="text-sm">اضغط لتحميل صورة أو ملف PDF</span>
-                    <span className="text-xs">JPG, PNG, WebP, PDF — حد أقصى 10 م.ب</span>
+                    <span className="text-sm">{t.upload_hint}</span>
+                    <span className="text-xs">{t.upload_size_hint}</span>
                   </button>
                 ) : (
                   <div className="border border-border rounded-lg p-3 flex items-center gap-3 bg-muted/50">
                     {filePreview ? (
-                      <img src={filePreview} alt="معاينة" className="w-12 h-12 rounded object-cover shrink-0" />
+                      <img src={filePreview} alt={t.preview_alt} className="w-12 h-12 rounded object-cover shrink-0" />
                     ) : (
                       <div className="w-12 h-12 rounded bg-destructive/10 flex items-center justify-center shrink-0">
                         <FileText className="w-6 h-6 text-destructive" />
@@ -242,26 +176,16 @@ const TenantsPage = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(attachedFile.size / 1024).toFixed(0)} ك.ب
-                      </p>
+                      <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(0)} {t.file_size_kb}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={clearFile}
-                    >
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={clearFile}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
               </div>
-              <Button
-                className="w-full bg-primary hover:bg-primary-light text-primary-foreground mt-4"
-                onClick={handleSave}
-              >
-                {editingTenant ? 'حفظ التعديلات' : 'حفظ المستأجر'}
+              <Button className="w-full bg-primary hover:bg-primary-light text-primary-foreground mt-4" onClick={handleSave}>
+                {editingTenant ? t.save_changes : t.save_tenant}
               </Button>
             </div>
           </SheetContent>
@@ -270,12 +194,7 @@ const TenantsPage = () => {
 
       <div className="mb-6 relative max-w-sm">
         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="البحث بالاسم أو رقم CIN..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-10 pr-10 text-right"
-        />
+        <Input placeholder={t.search_name_cin} value={search} onChange={(e) => setSearch(e.target.value)} className="h-10 pr-10 text-right" />
       </div>
 
       <div className="bg-card rounded-lg shadow-card border border-border overflow-hidden">
@@ -283,12 +202,12 @@ const TenantsPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">الاسم الكامل</TableHead>
-                <TableHead className="text-right">رقم CIN</TableHead>
-                <TableHead className="text-right">الهاتف</TableHead>
-                <TableHead className="text-right">الوحدة</TableHead>
-                <TableHead className="text-right">تاريخ الدخول</TableHead>
-                <TableHead className="text-center w-[100px]">إجراءات</TableHead>
+                <TableHead className="text-right">{t.full_name}</TableHead>
+                <TableHead className="text-right">{t.cin_number}</TableHead>
+                <TableHead className="text-right">{t.phone}</TableHead>
+                <TableHead className="text-right">{t.unit}</TableHead>
+                <TableHead className="text-right">{t.move_in_date}</TableHead>
+                <TableHead className="text-center w-[100px]">{t.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -303,20 +222,10 @@ const TenantsPage = () => {
                     <TableCell className="text-muted-foreground">{formatDate(tenant.move_in_date)}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-primary"
-                          onClick={() => openEditSheet(tenant)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); openEditSheet(tenant); }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setDeletingTenant(tenant)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeletingTenant(tenant); }}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -332,18 +241,15 @@ const TenantsPage = () => {
       <AlertDialog open={!!deletingTenant} onOpenChange={(open) => !open && setDeletingTenant(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-right">تأكيد الحذف</AlertDialogTitle>
+            <AlertDialogTitle className="text-right">{t.confirm_delete}</AlertDialogTitle>
             <AlertDialogDescription className="text-right">
-              هل أنت متأكد من حذف المستأجر "{deletingTenant?.full_name}"؟ لا يمكن التراجع عن هذا الإجراء.
+              {deletingTenant ? t.confirm_delete_msg(deletingTenant.full_name) : ''}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              حذف
+            <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t.delete}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -5,21 +5,23 @@ import {
 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { useTranslation } from '@/hooks/useTranslation';
 import { mockNotifications } from '@/data/mockData';
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'لوحة التحكم', path: '/' },
-  { icon: Building2, label: 'العقارات', path: '/properties' },
-  { icon: Users, label: 'المستأجرون', path: '/tenants' },
-  { icon: CreditCard, label: 'المدفوعات', path: '/payments' },
-  { icon: FileText, label: 'العقود', path: '/contracts' },
-  { icon: Bell, label: 'التنبيهات', path: '/notifications' },
+const navKeys = [
+  { icon: LayoutDashboard, key: 'nav_dashboard' as const, path: '/' },
+  { icon: Building2, key: 'nav_properties' as const, path: '/properties' },
+  { icon: Users, key: 'nav_tenants' as const, path: '/tenants' },
+  { icon: CreditCard, key: 'nav_payments' as const, path: '/payments' },
+  { icon: FileText, key: 'nav_contracts' as const, path: '/contracts' },
+  { icon: Bell, key: 'nav_notifications' as const, path: '/notifications' },
 ];
 
 const AppSidebar = () => {
   const location = useLocation();
   const { sidebarOpen, toggleSidebar } = useUIStore();
   const { user, logout } = useAuthStore();
+  const { t } = useTranslation();
   const unreadCount = mockNotifications.filter((n) => !n.is_read).length;
 
   return (
@@ -28,11 +30,10 @@ const AppSidebar = () => {
         sidebarOpen ? 'w-60' : 'w-16'
       } hidden md:flex`}
     >
-      {/* Logo */}
       <div className="h-16 flex items-center justify-center border-b border-border px-4">
         {sidebarOpen ? (
           <h1 className="text-xl font-bold">
-            <span className="text-primary">إيجارا</span>
+            <span className="text-primary">{t.brand_name}</span>
             <span className="text-accent font-latin"> Pro</span>
           </h1>
         ) : (
@@ -40,9 +41,8 @@ const AppSidebar = () => {
         )}
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 py-4 px-2 space-y-1">
-        {navItems.map((item) => {
+        {navKeys.map((item) => {
           const isActive = location.pathname === item.path || 
             (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
@@ -56,7 +56,7 @@ const AppSidebar = () => {
               }`}
             >
               <item.icon className="w-5 h-5 shrink-0" />
-              {sidebarOpen && <span>{item.label}</span>}
+              {sidebarOpen && <span>{t[item.key]}</span>}
               {item.path === '/notifications' && unreadCount > 0 && (
                 <span className="absolute left-3 top-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-latin">
                   {unreadCount}
@@ -67,7 +67,6 @@ const AppSidebar = () => {
         })}
       </nav>
 
-      {/* User + collapse */}
       <div className="border-t border-border p-3">
         {sidebarOpen && user && (
           <div className="flex items-center gap-3 mb-3 px-1">
