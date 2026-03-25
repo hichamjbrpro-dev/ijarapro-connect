@@ -14,21 +14,23 @@ const TopBar = () => {
         <Menu className="w-6 h-6" />
       </button>
 
-      <div className="flex items-center gap-4 mr-auto">
+      <div className="flex items-center gap-4 mr-auto relative z-10">
         {/* Language toggle */}
         <div className="flex items-center bg-muted rounded-full p-0.5 text-xs">
           <button
-            onClick={() => setLanguage('ar')}
-            className={`px-3 py-1 rounded-full transition-colors ${
-              language === 'ar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLanguage('ar'); }}
+            className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer select-none ${
+              language === 'ar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             AR
           </button>
           <button
-            onClick={() => setLanguage('fr')}
-            className={`px-3 py-1 rounded-full transition-colors ${
-              language === 'fr' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLanguage('fr'); }}
+            className={`px-3 py-1.5 rounded-full transition-colors cursor-pointer select-none ${
+              language === 'fr' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             FR
