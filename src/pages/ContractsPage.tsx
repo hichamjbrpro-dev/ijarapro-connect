@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FileText, Download, Upload, Plus } from 'lucide-react';
+import { FileText, Download, Upload, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,9 @@ const ContractsPage = () => {
   const [contracts, setContracts] = useState<Contract[]>(mockContracts);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string; url: string }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +156,36 @@ const ContractsPage = () => {
     if (addFileInputRef.current) addFileInputRef.current.value = '';
   };
 
+  const handleEditClick = (contract: Contract) => {
+    setEditingContract(contract);
+    setNewStartDate(contract.start_date);
+    setNewEndDate(contract.end_date);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditContract = () => {
+    if (!editingContract || !newStartDate || !newEndDate) return;
+    const days = calcDaysRemaining(newEndDate);
+    setContracts(prev => prev.map(c =>
+      c.id === editingContract.id
+        ? { ...c, start_date: newStartDate, end_date: newEndDate, days_remaining: days }
+        : c
+    ));
+    toast.success(t.edit_contract + ' ✓');
+    setEditDialogOpen(false);
+    setEditingContract(null);
+    setNewStartDate('');
+    setNewEndDate('');
+  };
+
+  const handleDeleteContract = (contractId: string) => {
+    if (!confirm(t.confirm_delete_contract)) return;
+    setContracts(prev => prev.filter(c => c.id !== contractId));
+    const { [contractId]: _, ...rest } = uploadedFiles;
+    setUploadedFiles(rest);
+    toast.success(t.delete_contract + ' ✓');
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader title={t.contracts_title} subtitle={t.contracts_count(contracts.length)}>
@@ -218,6 +250,16 @@ const ContractsPage = () => {
                 <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleUploadClick(contract.id)}>
                   <Upload className="w-3 h-3 ml-1" />
                   {t.upload_contract}
+                </Button>
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleEditClick(contract)}>
+                  <Pencil className="w-3 h-3 ml-1" />
+                  {t.edit_contract}
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 text-xs text-destructive hover:bg-destructive/10" onClick={() => handleDeleteContract(contract.id)}>
+                  <Trash2 className="w-3 h-3 ml-1" />
+                  {t.delete_contract}
                 </Button>
               </div>
             </div>
@@ -310,6 +352,35 @@ const ContractsPage = () => {
             </div>
 
             <Button className="w-full" onClick={handleAddContract}>
+              {t.save}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t.edit_contract}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editingContract && (
+              <div className="text-sm text-muted-foreground">
+                {mockTenants.find(tn => tn.id === editingContract.tenant_id)?.full_name}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>{t.start_date}</Label>
+                <Input type="date" value={newStartDate} onChange={e => setNewStartDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t.end_date}</Label>
+                <Input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={handleEditContract}>
               {t.save}
             </Button>
           </div>

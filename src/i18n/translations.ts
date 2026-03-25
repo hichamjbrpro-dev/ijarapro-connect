@@ -133,6 +133,9 @@ export const translations = {
     add_new_contract: 'إضافة عقد جديد',
     select_tenant: 'اختر المستأجر',
     no_tenants_without_contract: 'جميع المستأجرين لديهم عقود',
+    edit_contract: 'تعديل العقد',
+    delete_contract: 'حذف العقد',
+    confirm_delete_contract: 'هل أنت متأكد من حذف هذا العقد؟',
 
     // Notifications
     notifications_title: 'التنبيهات',
@@ -294,6 +297,9 @@ export const translations = {
     add_new_contract: 'Nouveau contrat',
     select_tenant: 'Sélectionner un locataire',
     no_tenants_without_contract: 'Tous les locataires ont des contrats',
+    edit_contract: 'Modifier le contrat',
+    delete_contract: 'Supprimer le contrat',
+    confirm_delete_contract: 'Voulez-vous vraiment supprimer ce contrat ?',
 
     notifications_title: 'Notifications',
     unread_count: (n: number) => `${n} non lue${n > 1 ? 's' : ''}`,
