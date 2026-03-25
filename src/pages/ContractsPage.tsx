@@ -44,6 +44,7 @@ const ContractsPage = () => {
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
+  const [propertyFilter, setPropertyFilter] = useState<string>('all');
 
   // Tenants without contracts
   const tenantsWithContracts = new Set(contracts.map(c => c.tenant_id));
