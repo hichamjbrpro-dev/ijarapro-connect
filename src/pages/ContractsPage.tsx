@@ -44,6 +44,7 @@ const ContractsPage = () => {
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
+  const [propertyFilter, setPropertyFilter] = useState<string>('all');
 
   // Tenants without contracts
   const tenantsWithContracts = new Set(contracts.map(c => c.tenant_id));
@@ -229,6 +230,27 @@ const ContractsPage = () => {
           ))}
         </div>
       </div>
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <Button
+          variant={propertyFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setPropertyFilter('all')}
+          className="text-xs"
+        >
+          {t.filter_all}
+        </Button>
+        {mockProperties.map(p => (
+          <Button
+            key={p.id}
+            variant={propertyFilter === p.id ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPropertyFilter(p.id)}
+            className="text-xs"
+          >
+            {p.name}
+          </Button>
+        ))}
+      </div>
 
       {(() => {
         const filtered = contracts.filter(contract => {
@@ -242,6 +264,10 @@ const ContractsPage = () => {
             const tenant = mockTenants.find(tn => tn.id === contract.tenant_id);
             const q = searchQuery.trim().toLowerCase();
             if (!tenant?.full_name.toLowerCase().includes(q)) return false;
+          }
+          if (propertyFilter !== 'all') {
+            const unit = mockUnits.find(u => u.id === contract.unit_id);
+            if (unit?.property_id !== propertyFilter) return false;
           }
           return true;
         });
