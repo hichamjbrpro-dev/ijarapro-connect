@@ -9,7 +9,13 @@ import { useAuthStore } from '@/store/authStore';
 const LoginPage = () => {
   const [tab, setTab] = useState<'login' | 'register'>('login');
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
 
+  const handleLogin = () => {
+    login({ id: '1', email: 'demo@ijarapro.ma', name: 'أحمد بنعلي' }, 'demo-token');
+    navigate('/');
+  };
   return (
     <div className="min-h-screen flex" dir="rtl">
       <div className="w-full lg:w-[45%] flex items-center justify-center p-8">
