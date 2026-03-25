@@ -9,7 +9,7 @@ import { formatCurrency, formatMonth } from '@/utils/formatters';
 import type { PaymentStatus } from '@/types';
 
 const PaymentsPage = () => {
-  const [currentMonth, setCurrentMonth] = useState('2025-03');
+  const [currentMonth, setCurrentMonth] = useState('2026-03');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
 
   const monthPayments = mockPayments.filter((p) => p.month === currentMonth);
