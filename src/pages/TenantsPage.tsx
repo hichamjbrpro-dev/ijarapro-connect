@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Upload, X, FileText, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,9 @@ const TenantsPage = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     full_name: '',
     cin: '',
@@ -35,9 +38,36 @@ const TenantsPage = () => {
 
   const vacantUnits = mockUnits.filter((u) => u.status === 'vacant');
 
+  const clearFile = () => {
+    setAttachedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('يرجى اختيار صورة (JPG, PNG, WebP) أو ملف PDF');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('حجم الملف يجب أن لا يتجاوز 10 ميغابايت');
+      return;
+    }
+    setAttachedFile(file);
+    if (file.type.startsWith('image/')) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview(null);
+    }
+  };
+
   const openAddSheet = () => {
     setEditingTenant(null);
     setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
+    clearFile();
     setSheetOpen(true);
   };
 
@@ -50,6 +80,7 @@ const TenantsPage = () => {
       email: tenant.email || '',
       unit_id: tenant.unit_id,
     });
+    clearFile();
     setSheetOpen(true);
   };
 
@@ -178,6 +209,52 @@ const TenantsPage = () => {
                   <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">
                     لا توجد وحدات شاغرة حالياً
                   </p>
+                )}
+              </div>
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label className="text-right block">مستند (صورة أو PDF)</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                {!attachedFile ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                  >
+                    <Upload className="w-8 h-8" />
+                    <span className="text-sm">اضغط لتحميل صورة أو ملف PDF</span>
+                    <span className="text-xs">JPG, PNG, WebP, PDF — حد أقصى 10 م.ب</span>
+                  </button>
+                ) : (
+                  <div className="border border-border rounded-lg p-3 flex items-center gap-3 bg-muted/50">
+                    {filePreview ? (
+                      <img src={filePreview} alt="معاينة" className="w-12 h-12 rounded object-cover shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded bg-destructive/10 flex items-center justify-center shrink-0">
+                        <FileText className="w-6 h-6 text-destructive" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(attachedFile.size / 1024).toFixed(0)} ك.ب
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={clearFile}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
               </div>
               <Button
