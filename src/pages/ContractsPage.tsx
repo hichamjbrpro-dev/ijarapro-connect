@@ -357,6 +357,35 @@ const ContractsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Contract Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t.edit_contract}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editingContract && (
+              <div className="text-sm text-muted-foreground">
+                {mockTenants.find(tn => tn.id === editingContract.tenant_id)?.full_name}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>{t.start_date}</Label>
+                <Input type="date" value={newStartDate} onChange={e => setNewStartDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t.end_date}</Label>
+                <Input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} />
+              </div>
+            </div>
+            <Button className="w-full" onClick={handleEditContract}>
+              {t.save}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
