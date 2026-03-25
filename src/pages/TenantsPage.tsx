@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import PageHeader from '@/components/shared/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
-import { mockTenants, mockUnits, mockProperties } from '@/data/mockData';
+import { mockTenants, mockUnits, mockProperties, mockContracts } from '@/data/mockData';
 import { formatDate } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Tenant } from '@/types';
