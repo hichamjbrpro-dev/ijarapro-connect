@@ -250,6 +250,7 @@ const ContractsPage = () => {
             {p.name}
           </Button>
         ))}
+      </div>
 
       {(() => {
         const filtered = contracts.filter(contract => {
