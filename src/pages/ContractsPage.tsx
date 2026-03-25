@@ -264,6 +264,10 @@ const ContractsPage = () => {
             const q = searchQuery.trim().toLowerCase();
             if (!tenant?.full_name.toLowerCase().includes(q)) return false;
           }
+          if (propertyFilter !== 'all') {
+            const unit = mockUnits.find(u => u.id === contract.unit_id);
+            if (unit?.property_id !== propertyFilter) return false;
+          }
           return true;
         });
 
