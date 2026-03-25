@@ -199,8 +199,56 @@ const ContractsPage = () => {
         </Button>
       </PageHeader>
 
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder={t.search_name_cin}
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pr-9"
+          />
+        </div>
+        <div className="flex gap-2">
+          {([
+            ['all', t.filter_all],
+            ['active', t.status_active],
+            ['expiring', t.status_expiring],
+            ['expired', t.status_expired],
+          ] as const).map(([key, label]) => (
+            <Button
+              key={key}
+              variant={statusFilter === key ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter(key)}
+              className="text-xs"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {contracts.map((contract) => {
+        {contracts
+          .filter(contract => {
+            // Status filter
+            if (statusFilter !== 'all') {
+              const d = contract.days_remaining;
+              if (statusFilter === 'expired' && (d === undefined || d >= 0)) return false;
+              if (statusFilter === 'expiring' && (d === undefined || d < 0 || d > 30)) return false;
+              if (statusFilter === 'active' && (d === undefined || d <= 30)) return false;
+            }
+            // Search filter
+            if (searchQuery.trim()) {
+              const tenant = mockTenants.find(tn => tn.id === contract.tenant_id);
+              const q = searchQuery.trim().toLowerCase();
+              if (!tenant?.full_name.toLowerCase().includes(q)) return false;
+            }
+            return true;
+          })
+          .map((contract) => {
           const tenant = mockTenants.find((tn) => tn.id === contract.tenant_id);
           const unit = mockUnits.find((u) => u.id === contract.unit_id);
           const hasFile = !!uploadedFiles[contract.id];
