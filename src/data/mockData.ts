@@ -190,7 +190,20 @@ export const mockPayments: Payment[] = mockTenants.map((tenant, i) => {
   };
 });
 
-export const mockContracts: Contract[] = [];
+export const mockContracts: Contract[] = [
+  { id: 'c1', tenant_id: 't1', unit_id: 'u1', start_date: '2024-01-01', end_date: '2026-12-31', days_remaining: 281 },
+  { id: 'c2', tenant_id: 't2', unit_id: 'u2', start_date: '2024-01-01', end_date: '2026-06-30', days_remaining: 97 },
+  { id: 'c3', tenant_id: 't3', unit_id: 'u3', start_date: '2023-06-01', end_date: '2026-05-31', days_remaining: 67 },
+  { id: 'c4', tenant_id: 't4', unit_id: 'u4', start_date: '2024-03-01', end_date: '2027-02-28', days_remaining: 340 },
+  { id: 'c5', tenant_id: 't5', unit_id: 'u5', start_date: '2024-01-01', end_date: '2026-04-15', days_remaining: 21 },
+  { id: 'c6', tenant_id: 't12', unit_id: 'u12', start_date: '2023-01-01', end_date: '2026-03-01', days_remaining: -24 },
+  { id: 'c7', tenant_id: 't14', unit_id: 'u14', start_date: '2024-06-01', end_date: '2027-05-31', days_remaining: 432 },
+  { id: 'c8', tenant_id: 't15', unit_id: 'u15', start_date: '2024-01-01', end_date: '2026-12-31', days_remaining: 281 },
+  { id: 'c9', tenant_id: 't23', unit_id: 'u23', start_date: '2024-01-01', end_date: '2026-03-31', days_remaining: 6 },
+  { id: 'c10', tenant_id: 't43', unit_id: 'u43', start_date: '2023-06-01', end_date: '2026-02-28', days_remaining: -25 },
+  { id: 'c11', tenant_id: 't50', unit_id: 'u50', start_date: '2024-01-01', end_date: '2027-01-01', days_remaining: 282 },
+  { id: 'c12', tenant_id: 't51', unit_id: 'u51', start_date: '2024-06-01', end_date: '2026-08-31', days_remaining: 159 },
+];
 
 export const mockNotifications: Notification[] = [
   { id: 'n1', owner_id: '1', type: 'rent_due', message: 'تذكير: موعد تحصيل إيجارات شهر مارس 2026', is_read: false, created_at: '2026-03-01T08:00:00' },
