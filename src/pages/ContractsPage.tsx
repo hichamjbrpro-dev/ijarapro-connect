@@ -31,7 +31,7 @@ const ContractsPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string; url: string }>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string; url: string }[]>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,7 +39,7 @@ const ContractsPage = () => {
   const [newTenantId, setNewTenantId] = useState('');
   const [newStartDate, setNewStartDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
-  const [newFile, setNewFile] = useState<File | null>(null);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
 
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,7 +94,7 @@ const ContractsPage = () => {
     const url = URL.createObjectURL(file);
     setUploadedFiles(prev => ({
       ...prev,
-      [selectedContractId]: { name: file.name, url }
+      [selectedContractId]: [...(prev[selectedContractId] || []), { name: file.name, url }]
     }));
 
     toast.success(t.upload_contract + ' ✓');
@@ -106,12 +106,14 @@ const ContractsPage = () => {
   };
 
   const handleDownload = (contractId: string) => {
-    const uploaded = uploadedFiles[contractId];
-    if (uploaded) {
-      const a = document.createElement('a');
-      a.href = uploaded.url;
-      a.download = uploaded.name;
-      a.click();
+    const files = uploadedFiles[contractId];
+    if (files && files.length > 0) {
+      files.forEach(f => {
+        const a = document.createElement('a');
+        a.href = f.url;
+        a.download = f.name;
+        a.click();
+      });
     } else {
       toast.info(t.download + ': ' + t.upload_contract);
     }
@@ -144,11 +146,11 @@ const ContractsPage = () => {
 
     setContracts(prev => [...prev, newContract]);
 
-    if (newFile) {
-      const url = URL.createObjectURL(newFile);
+    if (newFiles.length > 0) {
+      const fileEntries = newFiles.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
       setUploadedFiles(prev => ({
         ...prev,
-        [newContract.id]: { name: newFile.name, url }
+        [newContract.id]: fileEntries
       }));
     }
 
@@ -157,7 +159,7 @@ const ContractsPage = () => {
     setNewTenantId('');
     setNewStartDate('');
     setNewEndDate('');
-    setNewFile(null);
+    setNewFiles([]);
     if (addFileInputRef.current) addFileInputRef.current.value = '';
   };
 
@@ -293,7 +295,8 @@ const ContractsPage = () => {
                 {propContracts.map((contract) => {
                   const tenant = mockTenants.find((tn) => tn.id === contract.tenant_id);
                   const unit = mockUnits.find((u) => u.id === contract.unit_id);
-                  const hasFile = !!uploadedFiles[contract.id];
+                  const files = uploadedFiles[contract.id] || [];
+                  const hasFile = files.length > 0;
                   return (
                     <div
                       key={contract.id}
@@ -330,9 +333,13 @@ const ContractsPage = () => {
                       </div>
 
                       {hasFile && (
-                        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
-                          <FileText className="w-3 h-3" />
-                          <span className="truncate flex-1">{uploadedFiles[contract.id].name}</span>
+                        <div className="mt-3 space-y-1">
+                          {files.map((f, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
+                              <FileText className="w-3 h-3 shrink-0" />
+                              <span className="truncate flex-1">{f.name}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
 
@@ -430,23 +437,35 @@ const ContractsPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>{t.upload_contract} ({t.download})</Label>
+              <Label>{t.upload_contract} (max 2)</Label>
               <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <Upload className="w-6 h-6 text-muted-foreground mb-1" />
                 <span className="text-xs text-muted-foreground">
-                  {newFile ? newFile.name : 'PDF, JPG, PNG — Max 10MB'}
+                  {newFiles.length > 0 ? `${newFiles.length} ملف` : 'PDF, JPG, PNG — Max 10MB'}
                 </span>
                 <input
                   ref={addFileInputRef}
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  multiple
                   className="hidden"
                   onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) setNewFile(file);
+                    const files = Array.from(e.target.files || []).slice(0, 2);
+                    if (files.length > 0) setNewFiles(files);
                   }}
                 />
               </label>
+              {newFiles.length > 0 && (
+                <div className="space-y-1">
+                  {newFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
+                      <FileText className="w-3 h-3 shrink-0" />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <button type="button" className="text-destructive hover:text-destructive/80" onClick={() => setNewFiles(prev => prev.filter((_, idx) => idx !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Button className="w-full" onClick={handleAddContract}>
