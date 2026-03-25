@@ -225,6 +225,11 @@ const TenantsPage = () => {
                     <TableCell className="text-muted-foreground">{formatDate(tenant.move_in_date)}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
+                        {!mockContracts.some(c => c.tenant_id === tenant.id) && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-success" title={t.add_contract} onClick={(e) => { e.stopPropagation(); navigate('/contracts'); }}>
+                            <FilePlus className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => { e.stopPropagation(); openEditSheet(tenant); }}>
                           <Pencil className="h-4 w-4" />
                         </Button>
