@@ -68,7 +68,7 @@ const LoginPage = () => {
                 <label className="block text-sm font-medium mb-1.5">{t.password}</label>
                 <Input type="password" placeholder="••••••••" className="h-10" dir="ltr" />
               </div>
-              <Button className="w-full h-10 bg-primary hover:bg-primary-light text-primary-foreground">{t.create_account}</Button>
+              <Button type="button" onClick={handleLogin} className="w-full h-10 bg-primary hover:bg-primary-light text-primary-foreground">{t.create_account}</Button>
             </form>
           )}
 
