@@ -10,6 +10,7 @@ import TenantsPage from "@/pages/TenantsPage";
 import PaymentsPage from "@/pages/PaymentsPage";
 import ContractsPage from "@/pages/ContractsPage";
 import NotificationsPage from "@/pages/NotificationsPage";
+import TenantDetailPage from "@/pages/TenantDetailPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import NotFound from "@/pages/NotFound";
 import { useAuthStore } from "@/store/authStore";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/" element={<DashboardPage />} />
               <Route path="/properties" element={<PropertiesPage />} />
               <Route path="/tenants" element={<TenantsPage />} />
+              <Route path="/tenants/:id" element={<TenantDetailPage />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/contracts" element={<ContractsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
