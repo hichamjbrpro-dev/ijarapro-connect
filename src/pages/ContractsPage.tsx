@@ -271,7 +271,7 @@ const ContractsPage = () => {
                   return (
                     <div
                       key={contract.id}
-                      className={`bg-card rounded-lg shadow-card border border-border border-r-4 p-5 ${getStatusColor(contract.days_remaining)}`}
+                      className={`bg-card rounded-lg shadow-card border border-border border-r-4 p-5 overflow-hidden ${getStatusColor(contract.days_remaining)}`}
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-2">
