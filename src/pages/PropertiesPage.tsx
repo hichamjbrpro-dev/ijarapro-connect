@@ -10,7 +10,7 @@ import { mockProperties } from '@/data/mockData';
 import { formatCurrency, propertyTypeLabel } from '@/utils/formatters';
 import { Property } from '@/types';
 
-const cities = ['الدار البيضاء', 'الرباط', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'مكناس', 'وجدة'];
+const cities = ['تطوان', 'الدار البيضاء', 'الرباط', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'مكناس', 'وجدة'];
 
 const PropertyCard = ({ property }: { property: Property }) => {
   const occupancy = property.units_count ? ((property.occupied_count || 0) / property.units_count) * 100 : 0;
