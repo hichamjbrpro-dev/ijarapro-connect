@@ -129,6 +129,10 @@ export const translations = {
     status_active: 'ساري',
     download: 'تحميل',
     upload_contract: 'رفع عقد',
+    add_contract: 'إضافة عقد',
+    add_new_contract: 'إضافة عقد جديد',
+    select_tenant: 'اختر المستأجر',
+    no_tenants_without_contract: 'جميع المستأجرين لديهم عقود',
 
     // Notifications
     notifications_title: 'التنبيهات',
