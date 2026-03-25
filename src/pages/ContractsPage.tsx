@@ -39,7 +39,7 @@ const ContractsPage = () => {
   const [newTenantId, setNewTenantId] = useState('');
   const [newStartDate, setNewStartDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
-  const [newFile, setNewFile] = useState<File | null>(null);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
 
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
