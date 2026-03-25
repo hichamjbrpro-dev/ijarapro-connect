@@ -311,23 +311,23 @@ const ContractsPage = () => {
                       )}
 
                       <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleDownload(contract.id)}>
-                          <Download className="w-3 h-3 ml-1" />
-                          {t.download}
+                        <Button variant="outline" size="sm" className="flex-1 text-xs min-w-0 truncate" onClick={() => handleDownload(contract.id)}>
+                          <Download className="w-3 h-3 shrink-0 ml-1" />
+                          <span className="truncate">{t.download}</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleUploadClick(contract.id)}>
-                          <Upload className="w-3 h-3 ml-1" />
-                          {t.upload_contract}
+                        <Button variant="outline" size="sm" className="flex-1 text-xs min-w-0 truncate" onClick={() => handleUploadClick(contract.id)}>
+                          <Upload className="w-3 h-3 shrink-0 ml-1" />
+                          <span className="truncate">{t.upload_contract}</span>
                         </Button>
                       </div>
                       <div className="flex gap-2 mt-2">
-                        <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => handleEditClick(contract)}>
-                          <Pencil className="w-3 h-3 ml-1" />
-                          {t.edit_contract}
+                        <Button variant="outline" size="sm" className="flex-1 text-xs min-w-0 truncate" onClick={() => handleEditClick(contract)}>
+                          <Pencil className="w-3 h-3 shrink-0 ml-1" />
+                          <span className="truncate">{t.edit_contract}</span>
                         </Button>
-                        <Button variant="outline" size="sm" className="flex-1 text-xs text-destructive hover:bg-destructive/10" onClick={() => handleDeleteContract(contract.id)}>
-                          <Trash2 className="w-3 h-3 ml-1" />
-                          {t.delete_contract}
+                        <Button variant="outline" size="sm" className="flex-1 text-xs min-w-0 truncate text-destructive hover:bg-destructive/10" onClick={() => handleDeleteContract(contract.id)}>
+                          <Trash2 className="w-3 h-3 shrink-0 ml-1" />
+                          <span className="truncate">{t.delete_contract}</span>
                         </Button>
                       </div>
                     </div>
