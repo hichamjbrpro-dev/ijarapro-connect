@@ -218,8 +218,8 @@ const TenantsPage = () => {
               {filtered.map((tenant) => {
                 const unit = mockUnits.find((u) => u.id === tenant.unit_id);
                 return (
-                  <TableRow key={tenant.id}>
-                    <TableCell className="font-medium">{tenant.full_name}</TableCell>
+                  <TableRow key={tenant.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tenants/${tenant.id}`)}>
+                    <TableCell className="font-medium text-primary hover:underline">{tenant.full_name}</TableCell>
                     <TableCell className="font-latin text-muted-foreground">{tenant.cin || '—'}</TableCell>
                     <TableCell className="font-latin text-muted-foreground" dir="ltr">{tenant.phone || '—'}</TableCell>
                     <TableCell>{unit?.unit_number || '—'}</TableCell>
