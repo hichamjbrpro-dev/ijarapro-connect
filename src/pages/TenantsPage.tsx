@@ -38,9 +38,36 @@ const TenantsPage = () => {
 
   const vacantUnits = mockUnits.filter((u) => u.status === 'vacant');
 
+  const clearFile = () => {
+    setAttachedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('يرجى اختيار صورة (JPG, PNG, WebP) أو ملف PDF');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('حجم الملف يجب أن لا يتجاوز 10 ميغابايت');
+      return;
+    }
+    setAttachedFile(file);
+    if (file.type.startsWith('image/')) {
+      setFilePreview(URL.createObjectURL(file));
+    } else {
+      setFilePreview(null);
+    }
+  };
+
   const openAddSheet = () => {
     setEditingTenant(null);
     setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
+    clearFile();
     setSheetOpen(true);
   };
 
@@ -53,6 +80,7 @@ const TenantsPage = () => {
       email: tenant.email || '',
       unit_id: tenant.unit_id,
     });
+    clearFile();
     setSheetOpen(true);
   };
 
