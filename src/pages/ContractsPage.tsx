@@ -437,23 +437,35 @@ const ContractsPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>{t.upload_contract} ({t.download})</Label>
+              <Label>{t.upload_contract} (max 2)</Label>
               <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <Upload className="w-6 h-6 text-muted-foreground mb-1" />
                 <span className="text-xs text-muted-foreground">
-                  {newFile ? newFile.name : 'PDF, JPG, PNG — Max 10MB'}
+                  {newFiles.length > 0 ? `${newFiles.length} ملف` : 'PDF, JPG, PNG — Max 10MB'}
                 </span>
                 <input
                   ref={addFileInputRef}
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  multiple
                   className="hidden"
                   onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) setNewFile(file);
+                    const files = Array.from(e.target.files || []).slice(0, 2);
+                    if (files.length > 0) setNewFiles(files);
                   }}
                 />
               </label>
+              {newFiles.length > 0 && (
+                <div className="space-y-1">
+                  {newFiles.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
+                      <FileText className="w-3 h-3 shrink-0" />
+                      <span className="truncate flex-1">{f.name}</span>
+                      <button type="button" className="text-destructive hover:text-destructive/80" onClick={() => setNewFiles(prev => prev.filter((_, idx) => idx !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Button className="w-full" onClick={handleAddContract}>
