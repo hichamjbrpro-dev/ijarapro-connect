@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Tenant } from '@/types';
 
 const TenantsPage = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [tenants, setTenants] = useState<Tenant[]>(mockTenants);
   const [sheetOpen, setSheetOpen] = useState(false);
