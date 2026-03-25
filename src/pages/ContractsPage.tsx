@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
-import { FileText, Download, Upload } from 'lucide-react';
+import { FileText, Download, Upload, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import PageHeader from '@/components/shared/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
 import { mockContracts, mockTenants, mockUnits } from '@/data/mockData';
@@ -12,13 +14,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Contract } from '@/types';
 
 const ContractsPage = () => {
   const { t } = useTranslation();
+  const [contracts, setContracts] = useState<Contract[]>(mockContracts);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string; url: string }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addFileInputRef = useRef<HTMLInputElement>(null);
+
+  // New contract form state
+  const [newTenantId, setNewTenantId] = useState('');
+  const [newStartDate, setNewStartDate] = useState('');
+  const [newEndDate, setNewEndDate] = useState('');
+  const [newFile, setNewFile] = useState<File | null>(null);
+
+  // Tenants without contracts
+  const tenantsWithContracts = new Set(contracts.map(c => c.tenant_id));
+  const tenantsWithoutContracts = mockTenants.filter(t => !tenantsWithContracts.has(t.id));
 
   const getStatusColor = (days: number | undefined) => {
     if (days === undefined) return 'border-border';
@@ -87,12 +110,61 @@ const ContractsPage = () => {
     }
   };
 
+  const calcDaysRemaining = (endDate: string) => {
+    const end = new Date(endDate);
+    const now = new Date();
+    return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const handleAddContract = () => {
+    if (!newTenantId || !newStartDate || !newEndDate) {
+      toast.error(t.select_tenant);
+      return;
+    }
+
+    const tenant = mockTenants.find(tn => tn.id === newTenantId);
+    if (!tenant) return;
+
+    const days = calcDaysRemaining(newEndDate);
+    const newContract: Contract = {
+      id: `c-${Date.now()}`,
+      tenant_id: newTenantId,
+      unit_id: tenant.unit_id,
+      start_date: newStartDate,
+      end_date: newEndDate,
+      days_remaining: days,
+    };
+
+    setContracts(prev => [...prev, newContract]);
+
+    if (newFile) {
+      const url = URL.createObjectURL(newFile);
+      setUploadedFiles(prev => ({
+        ...prev,
+        [newContract.id]: { name: newFile.name, url }
+      }));
+    }
+
+    toast.success(t.add_contract + ' ✓');
+    setAddDialogOpen(false);
+    setNewTenantId('');
+    setNewStartDate('');
+    setNewEndDate('');
+    setNewFile(null);
+    if (addFileInputRef.current) addFileInputRef.current.value = '';
+  };
+
   return (
     <div className="animate-fade-in">
-      <PageHeader title={t.contracts_title} subtitle={t.contracts_count(mockContracts.length)} />
+      <PageHeader title={t.contracts_title} subtitle={t.contracts_count(contracts.length)}>
+        <Button onClick={() => setAddDialogOpen(true)} size="sm" disabled={tenantsWithoutContracts.length === 0}>
+          <Plus className="w-4 h-4 ml-1" />
+          {t.add_contract}
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockContracts.map((contract) => {
+        {contracts.map((contract) => {
           const tenant = mockTenants.find((tn) => tn.id === contract.tenant_id);
           const unit = mockUnits.find((u) => u.id === contract.unit_id);
           const hasFile = !!uploadedFiles[contract.id];
@@ -153,15 +225,14 @@ const ContractsPage = () => {
         })}
       </div>
 
+      {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t.upload_contract}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <label
-              className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-            >
+            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
               <Upload className="w-8 h-8 text-muted-foreground mb-2" />
               <span className="text-sm text-muted-foreground">PDF, JPG, PNG</span>
               <span className="text-xs text-muted-foreground mt-1">Max 10MB</span>
@@ -173,6 +244,74 @@ const ContractsPage = () => {
                 onChange={handleFileChange}
               />
             </label>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Contract Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t.add_new_contract}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t.select_tenant}</Label>
+              <Select value={newTenantId} onValueChange={setNewTenantId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t.select_tenant} />
+                </SelectTrigger>
+                <SelectContent>
+                  {tenantsWithoutContracts.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">{t.no_tenants_without_contract}</div>
+                  ) : (
+                    tenantsWithoutContracts.map(tenant => {
+                      const unit = mockUnits.find(u => u.id === tenant.unit_id);
+                      return (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.full_name} — {t.unit} {unit?.unit_number}
+                        </SelectItem>
+                      );
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>{t.start_date}</Label>
+                <Input type="date" value={newStartDate} onChange={e => setNewStartDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t.end_date}</Label>
+                <Input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t.upload_contract} ({t.download})</Label>
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                <span className="text-xs text-muted-foreground">
+                  {newFile ? newFile.name : 'PDF, JPG, PNG — Max 10MB'}
+                </span>
+                <input
+                  ref={addFileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) setNewFile(file);
+                  }}
+                />
+              </label>
+            </div>
+
+            <Button className="w-full" onClick={handleAddContract}>
+              {t.save}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
