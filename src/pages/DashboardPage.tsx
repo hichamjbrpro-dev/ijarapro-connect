@@ -2,10 +2,12 @@ import { Building2, Home, TrendingUp, AlertCircle, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
+import { useTranslation } from '@/hooks/useTranslation';
 import { mockProperties, mockPayments, mockNotifications, mockMonthlyIncome, mockTenants } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
 
 const DashboardPage = () => {
+  const { t } = useTranslation();
   const totalUnits = mockProperties.reduce((s, p) => s + (p.units_count || 0), 0);
   const occupiedUnits = mockProperties.reduce((s, p) => s + (p.occupied_count || 0), 0);
   const monthlyIncome = mockPayments
@@ -14,18 +16,17 @@ const DashboardPage = () => {
   const overduePayments = mockPayments.filter((p) => p.status === 'unpaid').length;
 
   const kpis = [
-    { label: 'إجمالي العقارات', value: mockProperties.length, icon: Building2, color: 'text-primary' },
-    { label: 'إجمالي الوحدات', value: totalUnits, icon: Home, color: 'text-primary' },
-    { label: 'المستأجرون', value: mockTenants.length, icon: Users, color: 'text-primary' },
-    { label: 'الدخل الشهري', value: formatCurrency(monthlyIncome), icon: TrendingUp, color: 'text-success' },
-    { label: 'إيجارات متأخرة', value: overduePayments, icon: AlertCircle, color: 'text-destructive' },
+    { label: t.kpi_total_properties, value: mockProperties.length, icon: Building2, color: 'text-primary' },
+    { label: t.kpi_total_units, value: totalUnits, icon: Home, color: 'text-primary' },
+    { label: t.kpi_tenants, value: mockTenants.length, icon: Users, color: 'text-primary' },
+    { label: t.kpi_monthly_income, value: formatCurrency(monthlyIncome), icon: TrendingUp, color: 'text-success' },
+    { label: t.kpi_overdue, value: overduePayments, icon: AlertCircle, color: 'text-destructive' },
   ];
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="لوحة التحكم" subtitle="مرحباً بك في إيجارا برو" />
+      <PageHeader title={t.dashboard_title} subtitle={t.dashboard_subtitle} />
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {kpis.map((kpi) => (
           <div key={kpi.label} className="bg-card rounded-lg p-4 shadow-card border border-border">
@@ -38,10 +39,9 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      {/* Occupancy bar */}
       <div className="bg-card rounded-lg p-4 shadow-card border border-border mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">نسبة الإشغال</span>
+          <span className="text-sm font-medium">{t.occupancy_rate}</span>
           <span className="text-sm font-latin text-muted-foreground">
             {occupiedUnits}/{totalUnits}
           </span>
@@ -55,16 +55,15 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-        {/* Chart */}
         <div className="lg:col-span-3 bg-card rounded-lg p-4 shadow-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">الدخل الشهري (آخر 6 أشهر)</h3>
+          <h3 className="text-sm font-semibold mb-4">{t.monthly_income_chart}</h3>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={mockMonthlyIncome}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
-                formatter={(value: number) => [formatCurrency(value), 'الدخل']}
+                formatter={(value: number) => [formatCurrency(value), t.income_label]}
                 contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))' }}
               />
               <Bar dataKey="income" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
@@ -72,9 +71,8 @@ const DashboardPage = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Recent activity */}
         <div className="lg:col-span-2 bg-card rounded-lg p-4 shadow-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">آخر التنبيهات</h3>
+          <h3 className="text-sm font-semibold mb-4">{t.recent_alerts}</h3>
           <div className="space-y-3">
             {mockNotifications.slice(0, 5).map((notif) => (
               <div key={notif.id} className="flex items-start gap-3 text-sm">
@@ -97,10 +95,9 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Overdue alerts */}
       {overduePayments > 0 && (
         <div className="bg-card rounded-lg p-4 shadow-card border border-border border-r-4 border-r-destructive">
-          <h3 className="text-sm font-semibold text-destructive mb-3">إيجارات متأخرة</h3>
+          <h3 className="text-sm font-semibold text-destructive mb-3">{t.overdue_rents}</h3>
           <div className="space-y-2">
             {mockPayments.filter((p) => p.status === 'unpaid').map((p) => {
               const tenant = mockTenants.find((t) => t.id === p.tenant_id);

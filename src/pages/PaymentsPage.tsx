@@ -4,18 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
+import { useTranslation } from '@/hooks/useTranslation';
 import { mockPayments, mockTenants, mockUnits } from '@/data/mockData';
 import { formatCurrency, formatMonth } from '@/utils/formatters';
 import type { PaymentStatus } from '@/types';
 
 const PaymentsPage = () => {
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState('2026-03');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
 
   const monthPayments = mockPayments.filter((p) => p.month === currentMonth);
-  const filtered = statusFilter === 'all'
-    ? monthPayments
-    : monthPayments.filter((p) => p.status === statusFilter);
+  const filtered = statusFilter === 'all' ? monthPayments : monthPayments.filter((p) => p.status === statusFilter);
 
   const totalDue = monthPayments.reduce((s, p) => s + p.amount_due, 0);
   const totalPaid = monthPayments.reduce((s, p) => s + p.amount_paid, 0);
@@ -32,17 +32,16 @@ const PaymentsPage = () => {
   };
 
   const filters: { label: string; value: PaymentStatus | 'all' }[] = [
-    { label: 'الكل', value: 'all' },
-    { label: 'مدفوع', value: 'paid' },
-    { label: 'متأخر', value: 'unpaid' },
-    { label: 'جزئي', value: 'partial' },
+    { label: t.filter_all, value: 'all' },
+    { label: t.filter_paid, value: 'paid' },
+    { label: t.filter_unpaid, value: 'unpaid' },
+    { label: t.filter_partial, value: 'partial' },
   ];
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="المدفوعات" />
+      <PageHeader title={t.payments_title} />
 
-      {/* Month selector */}
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" onClick={prevMonth} className="h-9 w-9">
           <ChevronRight className="w-4 h-4" />
@@ -53,32 +52,28 @@ const PaymentsPage = () => {
         </Button>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-card rounded-lg p-4 shadow-card border border-border text-center">
-          <p className="text-xs text-muted-foreground">المستحق</p>
+          <p className="text-xs text-muted-foreground">{t.due}</p>
           <p className="text-lg font-bold font-latin mt-1">{formatCurrency(totalDue)}</p>
         </div>
         <div className="bg-card rounded-lg p-4 shadow-card border border-border text-center">
-          <p className="text-xs text-muted-foreground">المحصّل</p>
+          <p className="text-xs text-muted-foreground">{t.collected}</p>
           <p className="text-lg font-bold font-latin text-success mt-1">{formatCurrency(totalPaid)}</p>
         </div>
         <div className="bg-card rounded-lg p-4 shadow-card border border-border text-center">
-          <p className="text-xs text-muted-foreground">المتبقي</p>
+          <p className="text-xs text-muted-foreground">{t.remaining}</p>
           <p className="text-lg font-bold font-latin text-destructive mt-1">{formatCurrency(totalDue - totalPaid)}</p>
         </div>
       </div>
 
-      {/* Status filters */}
       <div className="flex gap-2 mb-4">
         {filters.map((f) => (
           <button
             key={f.value}
             onClick={() => setStatusFilter(f.value)}
             className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              statusFilter === f.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              statusFilter === f.value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
             {f.label}
@@ -86,18 +81,17 @@ const PaymentsPage = () => {
         ))}
       </div>
 
-      {/* Table */}
       <div className="bg-card rounded-lg shadow-card border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right">الوحدة</TableHead>
-                <TableHead className="text-right">المستأجر</TableHead>
-                <TableHead className="text-right">المستحق</TableHead>
-                <TableHead className="text-right">المدفوع</TableHead>
-                <TableHead className="text-right">الحالة</TableHead>
-                <TableHead className="text-right">التاريخ</TableHead>
+                <TableHead className="text-right">{t.unit_col}</TableHead>
+                <TableHead className="text-right">{t.tenant_col}</TableHead>
+                <TableHead className="text-right">{t.due}</TableHead>
+                <TableHead className="text-right">{t.total_paid}</TableHead>
+                <TableHead className="text-right">{t.status}</TableHead>
+                <TableHead className="text-right">{t.date_col}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

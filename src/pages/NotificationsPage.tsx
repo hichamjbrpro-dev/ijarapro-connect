@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertCircle, Clock, CheckCircle, Bell as BellIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/shared/PageHeader';
+import { useTranslation } from '@/hooks/useTranslation';
 import { mockNotifications } from '@/data/mockData';
 import type { Notification } from '@/types';
 
@@ -13,6 +14,7 @@ const iconMap: Record<Notification['type'], { icon: React.ElementType; color: st
 };
 
 const NotificationsPage = () => {
+  const { t, locale } = useTranslation();
   const [notifications, setNotifications] = useState(mockNotifications);
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -26,10 +28,10 @@ const NotificationsPage = () => {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader title="التنبيهات" subtitle={`${unreadCount} غير مقروءة`}>
+      <PageHeader title={t.notifications_title} subtitle={t.unread_count(unreadCount)}>
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={markAllRead}>
-            تعيين الكل كمقروء
+            {t.mark_all_read}
           </Button>
         )}
       </PageHeader>
@@ -53,19 +55,14 @@ const NotificationsPage = () => {
                   {notif.message}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1 font-latin">
-                  {new Date(notif.created_at).toLocaleDateString('ar-MA', {
+                  {new Date(notif.created_at).toLocaleDateString(locale, {
                     year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
                   })}
                 </p>
               </div>
               {!notif.is_read && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground shrink-0"
-                  onClick={() => markRead(notif.id)}
-                >
-                  تم
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground shrink-0" onClick={() => markRead(notif.id)}>
+                  {t.done}
                 </Button>
               )}
             </div>

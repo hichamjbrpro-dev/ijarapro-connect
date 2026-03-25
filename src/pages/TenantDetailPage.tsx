@@ -6,14 +6,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import StatusBadge from '@/components/shared/StatusBadge';
+import { useTranslation } from '@/hooks/useTranslation';
 import { mockTenants, mockUnits, mockProperties, mockPayments, mockContracts } from '@/data/mockData';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 
 const TenantDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const tenant = mockTenants.find((t) => t.id === id);
+  const tenant = mockTenants.find((tn) => tn.id === id);
   const unit = tenant ? mockUnits.find((u) => u.id === tenant.unit_id) : null;
   const property = unit ? mockProperties.find((p) => p.id === unit.property_id) : null;
   const payments = mockPayments.filter((p) => p.tenant_id === id);
@@ -22,10 +24,10 @@ const TenantDetailPage = () => {
   if (!tenant) {
     return (
       <div className="animate-fade-in flex flex-col items-center justify-center py-20">
-        <p className="text-muted-foreground text-lg mb-4">لم يتم العثور على المستأجر</p>
+        <p className="text-muted-foreground text-lg mb-4">{t.tenant_not_found}</p>
         <Button variant="outline" onClick={() => navigate('/tenants')}>
           <ArrowRight className="w-4 h-4 ml-2" />
-          العودة للمستأجرين
+          {t.back_to_tenants}
         </Button>
       </div>
     );
@@ -35,9 +37,15 @@ const TenantDetailPage = () => {
   const totalDue = payments.reduce((sum, p) => sum + p.amount_due, 0);
   const totalUnpaid = totalDue - totalPaid;
 
+  const unitTypeMap: Record<string, string> = {
+    apartment: t.unit_type_apartment,
+    shop: t.unit_type_shop,
+    studio: t.unit_type_studio,
+    floor: t.unit_type_floor,
+  };
+
   return (
     <div className="animate-fade-in">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate('/tenants')} className="shrink-0">
           <ArrowRight className="w-5 h-5" />
@@ -45,12 +53,11 @@ const TenantDetailPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">{tenant.full_name}</h1>
           <p className="text-sm text-muted-foreground">
-            {property?.name} — وحدة {unit?.unit_number}
+            {property?.name} — {t.unit} {unit?.unit_number}
           </p>
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardContent className="pt-5 pb-4 flex items-center gap-3">
@@ -58,7 +65,7 @@ const TenantDetailPage = () => {
               <Home className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">الإيجار الشهري</p>
+              <p className="text-xs text-muted-foreground">{t.monthly_rent}</p>
               <p className="text-lg font-bold text-foreground">{formatCurrency(unit?.monthly_rent || 0)}</p>
             </div>
           </CardContent>
@@ -69,7 +76,7 @@ const TenantDetailPage = () => {
               <CreditCard className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">المدفوع</p>
+              <p className="text-xs text-muted-foreground">{t.total_paid}</p>
               <p className="text-lg font-bold text-green-600">{formatCurrency(totalPaid)}</p>
             </div>
           </CardContent>
@@ -80,56 +87,53 @@ const TenantDetailPage = () => {
               <CreditCard className="w-5 h-5 text-destructive" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">غير المدفوع</p>
+              <p className="text-xs text-muted-foreground">{t.total_unpaid}</p>
               <p className="text-lg font-bold text-destructive">{formatCurrency(totalUnpaid)}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs */}
       <Tabs defaultValue="info" dir="rtl">
         <TabsList className="w-full justify-start mb-4">
           <TabsTrigger value="info" className="gap-2">
             <User className="w-4 h-4" />
-            المعلومات الشخصية
+            {t.personal_info}
           </TabsTrigger>
           <TabsTrigger value="payments" className="gap-2">
             <CreditCard className="w-4 h-4" />
-            المدفوعات
+            {t.nav_payments}
           </TabsTrigger>
           <TabsTrigger value="contract" className="gap-2">
             <FileText className="w-4 h-4" />
-            العقد
+            {t.contract}
           </TabsTrigger>
         </TabsList>
 
-        {/* Personal Info Tab */}
         <TabsContent value="info">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">المعلومات الشخصية</CardTitle>
+              <CardTitle className="text-base">{t.personal_info}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <InfoRow icon={<User className="w-4 h-4" />} label="الاسم الكامل" value={tenant.full_name} />
-                <InfoRow icon={<CreditCard className="w-4 h-4" />} label="رقم CIN" value={tenant.cin || '—'} dir="ltr" />
-                <InfoRow icon={<Phone className="w-4 h-4" />} label="الهاتف" value={tenant.phone || '—'} dir="ltr" />
-                <InfoRow icon={<Mail className="w-4 h-4" />} label="البريد الإلكتروني" value={tenant.email || '—'} dir="ltr" />
-                <InfoRow icon={<Calendar className="w-4 h-4" />} label="تاريخ الدخول" value={formatDate(tenant.move_in_date)} />
-                <InfoRow icon={<Home className="w-4 h-4" />} label="العقار" value={property?.name || '—'} />
-                <InfoRow icon={<Home className="w-4 h-4" />} label="الوحدة" value={unit?.unit_number || '—'} />
-                <InfoRow icon={<Home className="w-4 h-4" />} label="نوع الوحدة" value={unitTypeLabel(unit?.type)} />
+                <InfoRow icon={<User className="w-4 h-4" />} label={t.full_name} value={tenant.full_name} />
+                <InfoRow icon={<CreditCard className="w-4 h-4" />} label={t.cin_number} value={tenant.cin || '—'} dir="ltr" />
+                <InfoRow icon={<Phone className="w-4 h-4" />} label={t.phone} value={tenant.phone || '—'} dir="ltr" />
+                <InfoRow icon={<Mail className="w-4 h-4" />} label={t.email} value={tenant.email || '—'} dir="ltr" />
+                <InfoRow icon={<Calendar className="w-4 h-4" />} label={t.move_in_date} value={formatDate(tenant.move_in_date)} />
+                <InfoRow icon={<Home className="w-4 h-4" />} label={t.property} value={property?.name || '—'} />
+                <InfoRow icon={<Home className="w-4 h-4" />} label={t.unit} value={unit?.unit_number || '—'} />
+                <InfoRow icon={<Home className="w-4 h-4" />} label={t.unit_type} value={unit?.type ? (unitTypeMap[unit.type] || unit.type) : '—'} />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Payments Tab */}
         <TabsContent value="payments">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">سجل المدفوعات</CardTitle>
+              <CardTitle className="text-base">{t.payment_history}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {payments.length > 0 ? (
@@ -137,11 +141,11 @@ const TenantDetailPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right">الشهر</TableHead>
-                        <TableHead className="text-right">المبلغ المستحق</TableHead>
-                        <TableHead className="text-right">المبلغ المدفوع</TableHead>
-                        <TableHead className="text-right">الحالة</TableHead>
-                        <TableHead className="text-right">تاريخ الدفع</TableHead>
+                        <TableHead className="text-right">{t.month_col}</TableHead>
+                        <TableHead className="text-right">{t.amount_due}</TableHead>
+                        <TableHead className="text-right">{t.amount_paid}</TableHead>
+                        <TableHead className="text-right">{t.status}</TableHead>
+                        <TableHead className="text-right">{t.payment_date}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -150,31 +154,24 @@ const TenantDetailPage = () => {
                           <TableCell className="font-latin">{payment.month}</TableCell>
                           <TableCell>{formatCurrency(payment.amount_due)}</TableCell>
                           <TableCell>{formatCurrency(payment.amount_paid)}</TableCell>
-                          <TableCell>
-                            <StatusBadge status={payment.status} />
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {payment.payment_date ? formatDate(payment.payment_date) : '—'}
-                          </TableCell>
+                          <TableCell><StatusBadge status={payment.status} /></TableCell>
+                          <TableCell className="text-muted-foreground">{payment.payment_date ? formatDate(payment.payment_date) : '—'}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
               ) : (
-                <div className="py-10 text-center text-muted-foreground">
-                  لا توجد مدفوعات مسجلة
-                </div>
+                <div className="py-10 text-center text-muted-foreground">{t.no_payments}</div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Contract Tab */}
         <TabsContent value="contract">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">العقود</CardTitle>
+              <CardTitle className="text-base">{t.contracts}</CardTitle>
             </CardHeader>
             <CardContent>
               {contracts.length > 0 ? (
@@ -182,9 +179,9 @@ const TenantDetailPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-right">تاريخ البداية</TableHead>
-                        <TableHead className="text-right">تاريخ النهاية</TableHead>
-                        <TableHead className="text-right">الأيام المتبقية</TableHead>
+                        <TableHead className="text-right">{t.start_date}</TableHead>
+                        <TableHead className="text-right">{t.end_date}</TableHead>
+                        <TableHead className="text-right">{t.days_remaining}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -195,7 +192,7 @@ const TenantDetailPage = () => {
                           <TableCell>
                             {contract.days_remaining !== undefined ? (
                               <Badge variant={contract.days_remaining < 30 ? 'destructive' : 'secondary'}>
-                                {contract.days_remaining} يوم
+                                {contract.days_remaining} {t.day}
                               </Badge>
                             ) : '—'}
                           </TableCell>
@@ -205,9 +202,7 @@ const TenantDetailPage = () => {
                   </Table>
                 </div>
               ) : (
-                <div className="py-10 text-center text-muted-foreground">
-                  لا توجد عقود مسجلة لهذا المستأجر
-                </div>
+                <div className="py-10 text-center text-muted-foreground">{t.no_contracts}</div>
               )}
             </CardContent>
           </Card>
@@ -224,21 +219,9 @@ const InfoRow = ({ icon, label, value, dir }: { icon: React.ReactNode; label: st
     </div>
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-sm font-medium text-foreground ${dir === 'ltr' ? 'font-latin' : ''}`} dir={dir}>
-        {value}
-      </p>
+      <p className={`text-sm font-medium text-foreground ${dir === 'ltr' ? 'font-latin' : ''}`} dir={dir}>{value}</p>
     </div>
   </div>
 );
-
-const unitTypeLabel = (type?: string) => {
-  const map: Record<string, string> = {
-    apartment: 'شقة',
-    shop: 'متجر',
-    studio: 'استوديو',
-    floor: 'طابق',
-  };
-  return type ? map[type] || type : '—';
-};
 
 export default TenantDetailPage;
