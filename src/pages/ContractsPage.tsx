@@ -295,7 +295,8 @@ const ContractsPage = () => {
                 {propContracts.map((contract) => {
                   const tenant = mockTenants.find((tn) => tn.id === contract.tenant_id);
                   const unit = mockUnits.find((u) => u.id === contract.unit_id);
-                  const hasFile = !!uploadedFiles[contract.id];
+                  const files = uploadedFiles[contract.id] || [];
+                  const hasFile = files.length > 0;
                   return (
                     <div
                       key={contract.id}
@@ -332,9 +333,13 @@ const ContractsPage = () => {
                       </div>
 
                       {hasFile && (
-                        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
-                          <FileText className="w-3 h-3" />
-                          <span className="truncate flex-1">{uploadedFiles[contract.id].name}</span>
+                        <div className="mt-3 space-y-1">
+                          {files.map((f, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded px-2 py-1">
+                              <FileText className="w-3 h-3 shrink-0" />
+                              <span className="truncate flex-1">{f.name}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
 
