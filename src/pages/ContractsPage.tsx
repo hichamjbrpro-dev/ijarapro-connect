@@ -36,6 +36,7 @@ const ContractsPage = () => {
   const [newTenantId, setNewTenantId] = useState('');
   const [newStartDate, setNewStartDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
+  const [newRentAmount, setNewRentAmount] = useState('');
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
@@ -104,25 +105,30 @@ const ContractsPage = () => {
 
     const { error } = await supabase.from('contracts').insert({
       tenant_id: newTenantId, unit_id: tenant.unit_id, start_date: newStartDate, end_date: newEndDate,
+      rent_amount: newRentAmount ? parseFloat(newRentAmount) : 0,
     });
     if (error) { toast.error(error.message); return; }
 
     queryClient.invalidateQueries({ queryKey: ['contracts'] });
     toast.success(t.add_contract + ' ✓');
-    setAddDialogOpen(false); setNewTenantId(''); setNewStartDate(''); setNewEndDate(''); setNewFiles([]);
+    setAddDialogOpen(false); setNewTenantId(''); setNewStartDate(''); setNewEndDate(''); setNewRentAmount(''); setNewFiles([]);
   };
 
   const handleEditClick = (contract: Contract) => {
-    setEditingContract(contract); setNewStartDate(contract.start_date); setNewEndDate(contract.end_date); setEditDialogOpen(true);
+    setEditingContract(contract); setNewStartDate(contract.start_date); setNewEndDate(contract.end_date);
+    setNewRentAmount(contract.rent_amount?.toString() || '0'); setEditDialogOpen(true);
   };
 
   const handleEditContract = async () => {
     if (!editingContract || !newStartDate || !newEndDate) return;
-    const { error } = await supabase.from('contracts').update({ start_date: newStartDate, end_date: newEndDate }).eq('id', editingContract.id);
+    const { error } = await supabase.from('contracts').update({
+      start_date: newStartDate, end_date: newEndDate,
+      rent_amount: newRentAmount ? parseFloat(newRentAmount) : 0,
+    }).eq('id', editingContract.id);
     if (error) { toast.error(error.message); return; }
     queryClient.invalidateQueries({ queryKey: ['contracts'] });
     toast.success(t.edit_contract + ' ✓');
-    setEditDialogOpen(false); setEditingContract(null); setNewStartDate(''); setNewEndDate('');
+    setEditDialogOpen(false); setEditingContract(null); setNewStartDate(''); setNewEndDate(''); setNewRentAmount('');
   };
 
   const handleDeleteContract = async (contractId: string) => {
@@ -239,6 +245,9 @@ const ContractsPage = () => {
                         </span>
                       </div>
                       <div className="space-y-2 text-sm">
+                        {contract.rent_amount > 0 && (
+                          <div className="flex justify-between"><span className="text-muted-foreground">{t.rent_amount_label}</span><span className="font-latin font-semibold text-primary">{contract.rent_amount.toLocaleString()} د.م</span></div>
+                        )}
                         <div className="flex justify-between"><span className="text-muted-foreground">{t.start_date}</span><span className="font-latin">{formatDate(contract.start_date)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">{t.end_date}</span><span className="font-latin">{formatDate(contract.end_date)}</span></div>
                         {contract.days_remaining !== undefined && contract.days_remaining >= 0 && (
@@ -338,6 +347,10 @@ const ContractsPage = () => {
               <div className="space-y-2"><Label>{t.end_date}</Label><Input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} /></div>
             </div>
             <div className="space-y-2">
+              <Label>{t.rent_amount_label}</Label>
+              <Input type="number" placeholder="0" value={newRentAmount} onChange={e => setNewRentAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
               <Label>{t.upload_contract} (max 2)</Label>
               <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <Upload className="w-6 h-6 text-muted-foreground mb-1" />
@@ -371,6 +384,10 @@ const ContractsPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2"><Label>{t.start_date}</Label><Input type="date" value={newStartDate} onChange={e => setNewStartDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>{t.end_date}</Label><Input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} /></div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t.rent_amount_label}</Label>
+              <Input type="number" placeholder="0" value={newRentAmount} onChange={e => setNewRentAmount(e.target.value)} />
             </div>
             <Button className="w-full" onClick={handleEditContract}>{t.save}</Button>
           </div>

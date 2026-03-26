@@ -1,0 +1,1 @@
+ALTER TABLE public.contracts ADD COLUMN rent_amount numeric NOT NULL DEFAULT 0;

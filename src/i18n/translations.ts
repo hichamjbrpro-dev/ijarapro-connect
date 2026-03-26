@@ -157,6 +157,7 @@ export const translations = {
     edit_contract: 'تعديل العقد',
     delete_contract: 'حذف العقد',
     confirm_delete_contract: 'هل أنت متأكد من حذف هذا العقد؟',
+    rent_amount_label: 'مبلغ الكراء (د.م)',
 
     // Notifications
     notifications_title: 'التنبيهات',
@@ -380,6 +381,7 @@ export const translations = {
     edit_contract: 'Modifier le contrat',
     delete_contract: 'Supprimer le contrat',
     confirm_delete_contract: 'Voulez-vous vraiment supprimer ce contrat ?',
+    rent_amount_label: 'Montant du loyer (MAD)',
 
     notifications_title: 'Notifications',
     unread_count: (n: number) => `${n} non lue${n > 1 ? 's' : ''}`,

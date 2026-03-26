@@ -20,6 +20,7 @@ export type Database = {
           end_date: string
           file_url: string | null
           id: string
+          rent_amount: number
           start_date: string
           tenant_id: string
           unit_id: string
@@ -29,6 +30,7 @@ export type Database = {
           end_date: string
           file_url?: string | null
           id?: string
+          rent_amount?: number
           start_date: string
           tenant_id: string
           unit_id: string
@@ -38,6 +40,7 @@ export type Database = {
           end_date?: string
           file_url?: string | null
           id?: string
+          rent_amount?: number
           start_date?: string
           tenant_id?: string
           unit_id?: string
