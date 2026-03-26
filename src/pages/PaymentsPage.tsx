@@ -1,24 +1,36 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronRight, ChevronLeft, Search, ArrowUpDown, ArrowUp, ArrowDown, Building2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Search, ArrowUpDown, ArrowUp, ArrowDown, Building2, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
 import { mockPayments, mockTenants, mockUnits, mockProperties } from '@/data/mockData';
 import { formatCurrency, formatMonth } from '@/utils/formatters';
-import type { PaymentStatus } from '@/types';
+import { toast } from 'sonner';
+import type { Payment, PaymentStatus } from '@/types';
 
 // Pre-build lookup maps once
 const tenantMap = new Map(mockTenants.map(t => [t.id, t]));
 const unitMap = new Map(mockUnits.map(u => [u.id, u]));
+const propertyMap = new Map(mockProperties.map(p => [p.id, p]));
 
-type SortKey = 'unit' | 'tenant' | 'due' | 'paid' | 'status' | 'date';
+type SortKey = 'unit' | 'tenant' | 'property' | 'due' | 'paid' | 'status' | 'date';
 type SortDir = 'asc' | 'desc' | null;
 
 const PaymentsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [payments, setPayments] = useState<Payment[]>(mockPayments);
   const [currentMonth, setCurrentMonth] = useState('2026-03');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,9 +38,14 @@ const PaymentsPage = () => {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
 
+  // Payment dialog
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [payAmount, setPayAmount] = useState('');
+
   const monthPayments = useMemo(
-    () => mockPayments.filter(p => p.month === currentMonth),
-    [currentMonth]
+    () => payments.filter(p => p.month === currentMonth),
+    [currentMonth, payments]
   );
 
   const filtered = useMemo(() => {
@@ -72,6 +89,12 @@ const PaymentsPage = () => {
         case 'tenant':
           cmp = (tenantMap.get(a.tenant_id)?.full_name || '').localeCompare(tenantMap.get(b.tenant_id)?.full_name || '');
           break;
+        case 'property': {
+          const pA = unitMap.get(a.unit_id)?.property_id || '';
+          const pB = unitMap.get(b.unit_id)?.property_id || '';
+          cmp = (propertyMap.get(pA)?.name || '').localeCompare(propertyMap.get(pB)?.name || '');
+          break;
+        }
         case 'due':
           cmp = a.amount_due - b.amount_due;
           break;
@@ -127,6 +150,35 @@ const PaymentsPage = () => {
     });
   }, []);
 
+  const handleRecordPayment = () => {
+    if (!selectedPayment || !payAmount) return;
+    const amount = parseFloat(payAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    setPayments(prev => prev.map(p => {
+      if (p.id !== selectedPayment.id) return p;
+      const newPaid = p.amount_paid + amount;
+      const newStatus: PaymentStatus = newPaid >= p.amount_due ? 'paid' : newPaid > 0 ? 'partial' : 'unpaid';
+      return {
+        ...p,
+        amount_paid: Math.min(newPaid, p.amount_due),
+        status: newStatus,
+        payment_date: new Date().toISOString().split('T')[0],
+      };
+    }));
+
+    toast.success(t.payment_recorded);
+    setPayDialogOpen(false);
+    setSelectedPayment(null);
+    setPayAmount('');
+  };
+
+  const openPayDialog = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setPayAmount(String(payment.amount_due - payment.amount_paid));
+    setPayDialogOpen(true);
+  };
+
   const SortIcon = ({ column }: { column: SortKey }) => {
     if (sortKey !== column || !sortDir) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
     return sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
@@ -138,6 +190,16 @@ const PaymentsPage = () => {
     { label: t.filter_unpaid, value: 'unpaid' },
     { label: t.filter_partial, value: 'partial' },
   ], [t]);
+
+  const columns: [SortKey, string][] = [
+    ['property', t.property_col],
+    ['unit', t.unit_col],
+    ['tenant', t.tenant_col],
+    ['due', t.due],
+    ['paid', t.total_paid],
+    ['status', t.status],
+    ['date', t.date_col],
+  ];
 
   return (
     <div className="animate-fade-in">
@@ -214,14 +276,7 @@ const PaymentsPage = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                {([
-                  ['unit', t.unit_col],
-                  ['tenant', t.tenant_col],
-                  ['due', t.due],
-                  ['paid', t.total_paid],
-                  ['status', t.status],
-                  ['date', t.date_col],
-                ] as [SortKey, string][]).map(([key, label]) => (
+                {columns.map(([key, label]) => (
                   <TableHead
                     key={key}
                     className="text-right cursor-pointer select-none hover:bg-muted/50 transition-colors"
@@ -233,29 +288,99 @@ const PaymentsPage = () => {
                     </span>
                   </TableHead>
                 ))}
+                <TableHead className="text-right">{t.actions_col}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sorted.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     {t.search_payments}
                   </TableCell>
                 </TableRow>
-              ) : sorted.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-latin">{unitMap.get(p.unit_id)?.unit_number || '—'}</TableCell>
-                  <TableCell>{tenantMap.get(p.tenant_id)?.full_name || '—'}</TableCell>
-                  <TableCell className="font-latin">{formatCurrency(p.amount_due)}</TableCell>
-                  <TableCell className="font-latin">{formatCurrency(p.amount_paid)}</TableCell>
-                  <TableCell><StatusBadge status={p.status} /></TableCell>
-                  <TableCell className="text-muted-foreground font-latin">{p.payment_date || '—'}</TableCell>
-                </TableRow>
-              ))}
+              ) : sorted.map((p) => {
+                const unit = unitMap.get(p.unit_id);
+                const property = unit ? propertyMap.get(unit.property_id) : null;
+                const tenant = tenantMap.get(p.tenant_id);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {property?.name || '—'}
+                    </TableCell>
+                    <TableCell className="font-latin">{unit?.unit_number || '—'}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => navigate(`/tenants/${p.tenant_id}`)}
+                        className="text-primary hover:underline font-medium transition-colors"
+                      >
+                        {tenant?.full_name || '—'}
+                      </button>
+                    </TableCell>
+                    <TableCell className="font-latin">{formatCurrency(p.amount_due)}</TableCell>
+                    <TableCell className="font-latin">{formatCurrency(p.amount_paid)}</TableCell>
+                    <TableCell><StatusBadge status={p.status} /></TableCell>
+                    <TableCell className="text-muted-foreground font-latin">{p.payment_date || '—'}</TableCell>
+                    <TableCell>
+                      {p.status !== 'paid' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openPayDialog(p)}
+                          className="h-7 px-2 text-xs gap-1 hover:bg-success/10 hover:text-success hover:border-success"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                          {t.record_payment}
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
       </div>
+
+      {/* Record Payment Dialog */}
+      <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t.record_payment}</DialogTitle>
+          </DialogHeader>
+          {selectedPayment && (() => {
+            const tenant = tenantMap.get(selectedPayment.tenant_id);
+            const remaining = selectedPayment.amount_due - selectedPayment.amount_paid;
+            return (
+              <div className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+                  <p className="text-sm font-medium">{tenant?.full_name}</p>
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t.due}: {formatCurrency(selectedPayment.amount_due)}</span>
+                    <span>{t.total_paid}: {formatCurrency(selectedPayment.amount_paid)}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-destructive">
+                    {t.remaining}: {formatCurrency(remaining)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.payment_amount}</Label>
+                  <Input
+                    type="number"
+                    value={payAmount}
+                    onChange={e => setPayAmount(e.target.value)}
+                    max={remaining}
+                    min={1}
+                    className="font-latin"
+                  />
+                </div>
+                <Button onClick={handleRecordPayment} className="w-full">
+                  {t.record_payment}
+                </Button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
