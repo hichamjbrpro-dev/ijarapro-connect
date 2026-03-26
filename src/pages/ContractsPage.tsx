@@ -115,7 +115,8 @@ const ContractsPage = () => {
   };
 
   const handleEditClick = (contract: Contract) => {
-    setEditingContract(contract); setNewStartDate(contract.start_date); setNewEndDate(contract.end_date); setEditDialogOpen(true);
+    setEditingContract(contract); setNewStartDate(contract.start_date); setNewEndDate(contract.end_date);
+    setNewRentAmount(contract.rent_amount?.toString() || '0'); setEditDialogOpen(true);
   };
 
   const handleEditContract = async () => {
