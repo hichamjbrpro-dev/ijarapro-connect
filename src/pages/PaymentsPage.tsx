@@ -1,10 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronRight, ChevronLeft, Search, ArrowUpDown, ArrowUp, ArrowDown, Building2, DollarSign } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Search, ArrowUpDown, ArrowUp, ArrowDown, Building2, DollarSign, History, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,14 @@ const propertyMap = new Map(mockProperties.map(p => [p.id, p]));
 type SortKey = 'unit' | 'tenant' | 'property' | 'due' | 'paid' | 'status' | 'date';
 type SortDir = 'asc' | 'desc' | null;
 
+interface PaymentLogEntry {
+  id: string;
+  payment_id: string;
+  amount: number;
+  type: 'full' | 'partial';
+  date: string;
+}
+
 const PaymentsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -42,6 +51,11 @@ const PaymentsPage = () => {
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [payAmount, setPayAmount] = useState('');
+  const [paymentLog, setPaymentLog] = useState<PaymentLogEntry[]>([]);
+
+  // History dialog
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyPaymentId, setHistoryPaymentId] = useState<string | null>(null);
 
   const monthPayments = useMemo(
     () => payments.filter(p => p.month === currentMonth),
@@ -50,36 +64,28 @@ const PaymentsPage = () => {
 
   const filtered = useMemo(() => {
     let result = monthPayments;
-
     if (statusFilter !== 'all') {
       result = result.filter(p => p.status === statusFilter);
     }
-
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter(p => {
         const tenant = tenantMap.get(p.tenant_id);
         const unit = unitMap.get(p.unit_id);
-        return (
-          tenant?.full_name.toLowerCase().includes(q) ||
-          unit?.unit_number.toLowerCase().includes(q)
-        );
+        return tenant?.full_name.toLowerCase().includes(q) || unit?.unit_number.toLowerCase().includes(q);
       });
     }
-
     if (propertyFilter !== 'all') {
       result = result.filter(p => {
         const unit = unitMap.get(p.unit_id);
         return unit?.property_id === propertyFilter;
       });
     }
-
     return result;
   }, [monthPayments, statusFilter, searchQuery, propertyFilter]);
 
   const sorted = useMemo(() => {
     if (!sortKey || !sortDir) return filtered;
-
     return [...filtered].sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
@@ -95,20 +101,14 @@ const PaymentsPage = () => {
           cmp = (propertyMap.get(pA)?.name || '').localeCompare(propertyMap.get(pB)?.name || '');
           break;
         }
-        case 'due':
-          cmp = a.amount_due - b.amount_due;
-          break;
-        case 'paid':
-          cmp = a.amount_paid - b.amount_paid;
-          break;
+        case 'due': cmp = a.amount_due - b.amount_due; break;
+        case 'paid': cmp = a.amount_paid - b.amount_paid; break;
         case 'status': {
           const order = { paid: 0, partial: 1, unpaid: 2 };
           cmp = order[a.status] - order[b.status];
           break;
         }
-        case 'date':
-          cmp = (a.payment_date || '').localeCompare(b.payment_date || '');
-          break;
+        case 'date': cmp = (a.payment_date || '').localeCompare(b.payment_date || ''); break;
       }
       return sortDir === 'desc' ? -cmp : cmp;
     });
@@ -116,10 +116,7 @@ const PaymentsPage = () => {
 
   const { totalDue, totalPaid } = useMemo(() => {
     let due = 0, paid = 0;
-    for (const p of monthPayments) {
-      due += p.amount_due;
-      paid += p.amount_paid;
-    }
+    for (const p of monthPayments) { due += p.amount_due; paid += p.amount_paid; }
     return { totalDue: due, totalPaid: paid };
   }, [monthPayments]);
 
@@ -150,21 +147,26 @@ const PaymentsPage = () => {
     });
   }, []);
 
-  const handleRecordPayment = () => {
-    if (!selectedPayment || !payAmount) return;
-    const amount = parseFloat(payAmount);
-    if (isNaN(amount) || amount <= 0) return;
+  const recordPayment = (amount: number, type: 'full' | 'partial') => {
+    if (!selectedPayment || amount <= 0) return;
 
+    const today = new Date().toISOString().split('T')[0];
+
+    // Add to log
+    setPaymentLog(prev => [...prev, {
+      id: `log-${Date.now()}`,
+      payment_id: selectedPayment.id,
+      amount,
+      type,
+      date: today,
+    }]);
+
+    // Update payment
     setPayments(prev => prev.map(p => {
       if (p.id !== selectedPayment.id) return p;
-      const newPaid = p.amount_paid + amount;
+      const newPaid = Math.min(p.amount_paid + amount, p.amount_due);
       const newStatus: PaymentStatus = newPaid >= p.amount_due ? 'paid' : newPaid > 0 ? 'partial' : 'unpaid';
-      return {
-        ...p,
-        amount_paid: Math.min(newPaid, p.amount_due),
-        status: newStatus,
-        payment_date: new Date().toISOString().split('T')[0],
-      };
+      return { ...p, amount_paid: newPaid, status: newStatus, payment_date: today };
     }));
 
     toast.success(t.payment_recorded);
@@ -173,10 +175,27 @@ const PaymentsPage = () => {
     setPayAmount('');
   };
 
+  const handleFullPayment = () => {
+    if (!selectedPayment) return;
+    const remaining = selectedPayment.amount_due - selectedPayment.amount_paid;
+    recordPayment(remaining, 'full');
+  };
+
+  const handlePartialPayment = () => {
+    const amount = parseFloat(payAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    recordPayment(amount, 'partial');
+  };
+
   const openPayDialog = (payment: Payment) => {
     setSelectedPayment(payment);
-    setPayAmount(String(payment.amount_due - payment.amount_paid));
+    setPayAmount('');
     setPayDialogOpen(true);
+  };
+
+  const openHistoryDialog = (paymentId: string) => {
+    setHistoryPaymentId(paymentId);
+    setHistoryDialogOpen(true);
   };
 
   const SortIcon = ({ column }: { column: SortKey }) => {
@@ -200,6 +219,10 @@ const PaymentsPage = () => {
     ['status', t.status],
     ['date', t.date_col],
   ];
+
+  const historyEntries = historyPaymentId ? paymentLog.filter(l => l.payment_id === historyPaymentId) : [];
+  const historyPayment = historyPaymentId ? payments.find(p => p.id === historyPaymentId) : null;
+  const historyTenant = historyPayment ? tenantMap.get(historyPayment.tenant_id) : null;
 
   return (
     <div className="animate-fade-in">
@@ -302,11 +325,10 @@ const PaymentsPage = () => {
                 const unit = unitMap.get(p.unit_id);
                 const property = unit ? propertyMap.get(unit.property_id) : null;
                 const tenant = tenantMap.get(p.tenant_id);
+                const hasLog = paymentLog.some(l => l.payment_id === p.id);
                 return (
                   <TableRow key={p.id}>
-                    <TableCell className="text-muted-foreground text-xs">
-                      {property?.name || '—'}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{property?.name || '—'}</TableCell>
                     <TableCell className="font-latin">{unit?.unit_number || '—'}</TableCell>
                     <TableCell>
                       <button
@@ -321,17 +343,29 @@ const PaymentsPage = () => {
                     <TableCell><StatusBadge status={p.status} /></TableCell>
                     <TableCell className="text-muted-foreground font-latin">{p.payment_date || '—'}</TableCell>
                     <TableCell>
-                      {p.status !== 'paid' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openPayDialog(p)}
-                          className="h-7 px-2 text-xs gap-1 hover:bg-success/10 hover:text-success hover:border-success"
-                        >
-                          <DollarSign className="w-3 h-3" />
-                          {t.record_payment}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {p.status !== 'paid' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openPayDialog(p)}
+                            className="h-7 px-2 text-xs gap-1 hover:bg-success/10 hover:text-success hover:border-success"
+                          >
+                            <DollarSign className="w-3 h-3" />
+                            {t.record_payment}
+                          </Button>
+                        )}
+                        {(hasLog || p.status === 'paid') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openHistoryDialog(p.id)}
+                            className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                          >
+                            <History className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -352,6 +386,7 @@ const PaymentsPage = () => {
             const remaining = selectedPayment.amount_due - selectedPayment.amount_paid;
             return (
               <div className="space-y-4">
+                {/* Tenant info */}
                 <div className="bg-muted/50 rounded-lg p-3 space-y-1">
                   <p className="text-sm font-medium">{tenant?.full_name}</p>
                   <div className="flex justify-between text-xs text-muted-foreground">
@@ -362,23 +397,101 @@ const PaymentsPage = () => {
                     {t.remaining}: {formatCurrency(remaining)}
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.payment_amount}</Label>
-                  <Input
-                    type="number"
-                    value={payAmount}
-                    onChange={e => setPayAmount(e.target.value)}
-                    max={remaining}
-                    min={1}
-                    className="font-latin"
-                  />
-                </div>
-                <Button onClick={handleRecordPayment} className="w-full">
-                  {t.record_payment}
-                </Button>
+
+                <Tabs defaultValue="full" className="w-full">
+                  <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="full" className="gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {t.pay_full}
+                    </TabsTrigger>
+                    <TabsTrigger value="partial" className="gap-1">
+                      <DollarSign className="w-3.5 h-3.5" />
+                      {t.pay_partial}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="full" className="space-y-3 mt-3">
+                    <div className="bg-success/10 border border-success/20 rounded-lg p-4 text-center">
+                      <p className="text-xs text-muted-foreground mb-1">{t.payment_amount}</p>
+                      <p className="text-2xl font-bold font-latin text-success">{formatCurrency(remaining)}</p>
+                    </div>
+                    <Button onClick={handleFullPayment} className="w-full bg-success hover:bg-success/90 text-white">
+                      <CheckCircle2 className="w-4 h-4 ml-1" />
+                      {t.pay_full}
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="partial" className="space-y-3 mt-3">
+                    <div className="space-y-2">
+                      <Label>{t.payment_amount}</Label>
+                      <Input
+                        type="number"
+                        value={payAmount}
+                        onChange={e => setPayAmount(e.target.value)}
+                        max={remaining}
+                        min={1}
+                        placeholder={`1 - ${remaining}`}
+                        className="font-latin"
+                      />
+                    </div>
+                    <Button
+                      onClick={handlePartialPayment}
+                      className="w-full"
+                      disabled={!payAmount || parseFloat(payAmount) <= 0 || parseFloat(payAmount) > remaining}
+                    >
+                      <DollarSign className="w-4 h-4 ml-1" />
+                      {t.pay_partial}
+                    </Button>
+                  </TabsContent>
+                </Tabs>
               </div>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment History Dialog */}
+      <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              {t.payments_log}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {historyTenant && (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-sm font-medium">{historyTenant.full_name}</p>
+                {historyPayment && (
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{t.due}: {formatCurrency(historyPayment.amount_due)}</span>
+                    <span>{t.total_paid}: {formatCurrency(historyPayment.amount_paid)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            {historyEntries.length === 0 ? (
+              <p className="text-center text-muted-foreground text-sm py-4">{t.no_payment_history}</p>
+            ) : (
+              <div className="space-y-2">
+                {historyEntries.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between border border-border rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${entry.type === 'full' ? 'bg-success' : 'bg-warning'}`} />
+                      <div>
+                        <p className="text-xs font-medium">
+                          {entry.type === 'full' ? t.full_payment : t.partial_payment}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground font-latin">{entry.date}</p>
+                      </div>
+                    </div>
+                    <span className="font-semibold font-latin text-sm">{formatCurrency(entry.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
