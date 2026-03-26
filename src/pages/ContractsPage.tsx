@@ -344,6 +344,10 @@ const ContractsPage = () => {
               <div className="space-y-2"><Label>{t.end_date}</Label><Input type="date" value={newEndDate} onChange={e => setNewEndDate(e.target.value)} /></div>
             </div>
             <div className="space-y-2">
+              <Label>{t.rent_amount_label}</Label>
+              <Input type="number" placeholder="0" value={newRentAmount} onChange={e => setNewRentAmount(e.target.value)} />
+            </div>
+            <div className="space-y-2">
               <Label>{t.upload_contract} (max 2)</Label>
               <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                 <Upload className="w-6 h-6 text-muted-foreground mb-1" />
