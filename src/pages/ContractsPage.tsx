@@ -36,6 +36,7 @@ const ContractsPage = () => {
   const [newTenantId, setNewTenantId] = useState('');
   const [newStartDate, setNewStartDate] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
+  const [newRentAmount, setNewRentAmount] = useState('');
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
