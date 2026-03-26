@@ -169,7 +169,7 @@ const PropertiesPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t.all_cities}</SelectItem>
-            {t.cities.map((c) => (
+            {allCities.map((c) => (
               <SelectItem key={c} value={c}>{c}</SelectItem>
             ))}
           </SelectContent>
