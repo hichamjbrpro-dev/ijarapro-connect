@@ -98,18 +98,39 @@ const ContractsPage = () => {
     }
   };
 
+  const generateMonthlyPayments = async (tenantId: string, unitId: string, startDate: string, endDate: string, rentAmount: number) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const payments: { tenant_id: string; unit_id: string; month: string; amount_due: number; amount_paid: number; status: 'unpaid'; receipt_sent: boolean }[] = [];
+    const current = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (current <= end) {
+      const month = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+      payments.push({ tenant_id: tenantId, unit_id: unitId, month, amount_due: rentAmount, amount_paid: 0, status: 'unpaid', receipt_sent: false });
+      current.setMonth(current.getMonth() + 1);
+    }
+    if (payments.length > 0) {
+      const { error } = await supabase.from('payments').insert(payments);
+      if (error) toast.error(error.message);
+    }
+  };
+
   const handleAddContract = async () => {
     if (!newTenantId || !newStartDate || !newEndDate) { toast.error(t.select_tenant); return; }
     const tenant = allTenants.find(tn => tn.id === newTenantId);
     if (!tenant) return;
+    const rentAmount = newRentAmount ? parseFloat(newRentAmount) : 0;
 
     const { error } = await supabase.from('contracts').insert({
       tenant_id: newTenantId, unit_id: tenant.unit_id, start_date: newStartDate, end_date: newEndDate,
-      rent_amount: newRentAmount ? parseFloat(newRentAmount) : 0,
+      rent_amount: rentAmount,
     });
     if (error) { toast.error(error.message); return; }
 
+    // Auto-generate monthly payments
+    await generateMonthlyPayments(newTenantId, tenant.unit_id!, newStartDate, newEndDate, rentAmount);
+
     queryClient.invalidateQueries({ queryKey: ['contracts'] });
+    queryClient.invalidateQueries({ queryKey: ['payments'] });
     toast.success(t.add_contract + ' ✓');
     setAddDialogOpen(false); setNewTenantId(''); setNewStartDate(''); setNewEndDate(''); setNewRentAmount(''); setNewFiles([]);
   };
