@@ -50,7 +50,7 @@ const TopBar = () => {
         {/* Avatar */}
         {user && (
           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
-            {user.name.charAt(0)}
+            {(user.user_metadata?.full_name || user.email || '?').charAt(0)}
           </div>
         )}
       </div>
