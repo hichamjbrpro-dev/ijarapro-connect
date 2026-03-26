@@ -200,6 +200,13 @@ export const translations = {
     stat_units: 'وحدة سكنية',
     stat_satisfaction: 'رضا العملاء',
 
+    edit_property: 'تعديل العقار',
+    delete_property: 'حذف العقار',
+    delete_property_confirm: 'هل أنت متأكد من حذف هذا العقار؟',
+    delete_property_desc: 'سيتم حذف العقار نهائياً ولا يمكن التراجع عن هذا الإجراء.',
+    delete: 'حذف',
+    cancel: 'إلغاء',
+
     // Cities
     cities: ['تطوان', 'الدار البيضاء', 'الرباط', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'مكناس', 'وجدة'],
   },
