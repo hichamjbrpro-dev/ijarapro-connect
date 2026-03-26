@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { FileText, Download, Upload, Plus, Pencil, Trash2, Search, Check, ChevronsUpDown } from 'lucide-react';
+import { FileText, Download, Upload, Plus, Pencil, Trash2, Search, Check, ChevronsUpDown, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,12 +54,12 @@ const ContractsPage = () => {
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<string>('all');
 
-  // Extract unique years from contracts
+  // Extract unique years sorted ascending
   const uniqueYears = [...new Set(contracts.flatMap(c => {
     const startYear = new Date(c.start_date).getFullYear();
     const endYear = new Date(c.end_date).getFullYear();
     return [startYear, endYear];
-  }))].sort((a, b) => b - a);
+  }))].sort((a, b) => a - b);
   const [tenantPopoverOpen, setTenantPopoverOpen] = useState(false);
 
   // Tenants without contracts
@@ -270,26 +270,20 @@ const ContractsPage = () => {
         ))}
       </div>
       <div className="flex gap-2 mb-4 flex-wrap items-center">
-        <span className="text-xs text-muted-foreground font-medium">{t.filter_year}:</span>
-        <Button
-          variant={yearFilter === 'all' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setYearFilter('all')}
-          className="text-xs"
-        >
-          {t.all_years}
-        </Button>
-        {uniqueYears.map(year => (
-          <Button
-            key={year}
-            variant={yearFilter === String(year) ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setYearFilter(String(year))}
-            className="text-xs"
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
+          <CalendarDays className="w-4 h-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground font-medium">{t.filter_year}:</span>
+          <select
+            value={yearFilter}
+            onChange={e => setYearFilter(e.target.value)}
+            className="bg-transparent text-sm font-semibold text-foreground border-none outline-none cursor-pointer"
           >
-            {year}
-          </Button>
-        ))}
+            <option value="all">{t.all_years}</option>
+            {uniqueYears.map(year => (
+              <option key={year} value={String(year)}>{year}</option>
+            ))}
+          </select>
+        </div>
       </div>
       {(() => {
         const filtered = contracts.filter(contract => {
