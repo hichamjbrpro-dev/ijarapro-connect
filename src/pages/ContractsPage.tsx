@@ -121,11 +121,14 @@ const ContractsPage = () => {
 
   const handleEditContract = async () => {
     if (!editingContract || !newStartDate || !newEndDate) return;
-    const { error } = await supabase.from('contracts').update({ start_date: newStartDate, end_date: newEndDate }).eq('id', editingContract.id);
+    const { error } = await supabase.from('contracts').update({
+      start_date: newStartDate, end_date: newEndDate,
+      rent_amount: newRentAmount ? parseFloat(newRentAmount) : 0,
+    }).eq('id', editingContract.id);
     if (error) { toast.error(error.message); return; }
     queryClient.invalidateQueries({ queryKey: ['contracts'] });
     toast.success(t.edit_contract + ' ✓');
-    setEditDialogOpen(false); setEditingContract(null); setNewStartDate(''); setNewEndDate('');
+    setEditDialogOpen(false); setEditingContract(null); setNewStartDate(''); setNewEndDate(''); setNewRentAmount('');
   };
 
   const handleDeleteContract = async (contractId: string) => {
