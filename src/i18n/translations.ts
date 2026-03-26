@@ -134,7 +134,7 @@ export const translations = {
     actions_col: 'إجراءات',
     pay_full: 'دفع كامل',
     pay_partial: 'دفع جزئي',
-    payment_history: 'سجل الدفعات',
+    payments_log: 'سجل الدفعات',
     no_payment_history: 'لا توجد دفعات مسجلة',
     payment_type: 'نوع الدفع',
     payment_date_col: 'تاريخ الدفع',
