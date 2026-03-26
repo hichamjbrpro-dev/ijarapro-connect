@@ -122,6 +122,11 @@ export const translations = {
     unit_col: 'الوحدة',
     tenant_col: 'المستأجر',
     date_col: 'التاريخ',
+    search_payments: 'البحث بالاسم أو رقم الوحدة...',
+    sort_asc: 'تصاعدي',
+    sort_desc: 'تنازلي',
+    filter_by_property: 'فلترة حسب العقار',
+    all_properties: 'كل العقارات',
 
     // Contracts
     contracts_title: 'العقود',
