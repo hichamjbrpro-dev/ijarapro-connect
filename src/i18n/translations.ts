@@ -281,6 +281,8 @@ export const translations = {
     collected: 'Collecté',
     remaining: 'Restant',
     filter_all: 'Tous',
+    filter_year: 'Année',
+    all_years: 'Toutes les années',
     filter_paid: 'Payé',
     filter_unpaid: 'En retard',
     filter_partial: 'Partiel',

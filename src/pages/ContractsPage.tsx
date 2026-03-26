@@ -52,6 +52,14 @@ const ContractsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
+
+  // Extract unique years from contracts
+  const uniqueYears = [...new Set(contracts.flatMap(c => {
+    const startYear = new Date(c.start_date).getFullYear();
+    const endYear = new Date(c.end_date).getFullYear();
+    return [startYear, endYear];
+  }))].sort((a, b) => b - a);
   const [tenantPopoverOpen, setTenantPopoverOpen] = useState(false);
 
   // Tenants without contracts
