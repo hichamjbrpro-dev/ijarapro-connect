@@ -105,12 +105,13 @@ const ContractsPage = () => {
 
     const { error } = await supabase.from('contracts').insert({
       tenant_id: newTenantId, unit_id: tenant.unit_id, start_date: newStartDate, end_date: newEndDate,
+      rent_amount: newRentAmount ? parseFloat(newRentAmount) : 0,
     });
     if (error) { toast.error(error.message); return; }
 
     queryClient.invalidateQueries({ queryKey: ['contracts'] });
     toast.success(t.add_contract + ' ✓');
-    setAddDialogOpen(false); setNewTenantId(''); setNewStartDate(''); setNewEndDate(''); setNewFiles([]);
+    setAddDialogOpen(false); setNewTenantId(''); setNewStartDate(''); setNewEndDate(''); setNewRentAmount(''); setNewFiles([]);
   };
 
   const handleEditClick = (contract: Contract) => {
