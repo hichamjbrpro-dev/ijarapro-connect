@@ -114,6 +114,8 @@ export const translations = {
     collected: 'المحصّل',
     remaining: 'المتبقي',
     filter_all: 'الكل',
+    filter_year: 'السنة',
+    all_years: 'كل السنوات',
     filter_paid: 'مدفوع',
     filter_unpaid: 'متأخر',
     filter_partial: 'جزئي',
