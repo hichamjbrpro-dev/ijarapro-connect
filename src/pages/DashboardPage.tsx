@@ -55,18 +55,53 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-        <div className="lg:col-span-3 bg-card rounded-lg p-4 shadow-card border border-border">
-          <h3 className="text-sm font-semibold mb-4">{t.monthly_income_chart}</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={mockMonthlyIncome}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+      <div className="lg:col-span-3 bg-card rounded-lg p-5 shadow-card border border-border">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-sm font-semibold">{t.monthly_income_chart}</h3>
+            <span className="text-xs text-muted-foreground font-latin">2025 - 2026</span>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={mockMonthlyIncome} barCategoryGap="20%">
+              <defs>
+                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+                width={40}
+              />
               <Tooltip
                 formatter={(value: number) => [formatCurrency(value), t.income_label]}
-                contentStyle={{ borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                contentStyle={{
+                  borderRadius: 10,
+                  border: '1px solid hsl(var(--border))',
+                  background: 'hsl(var(--card))',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  fontSize: 13,
+                  direction: 'rtl',
+                }}
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }}
               />
-              <Bar dataKey="income" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="income"
+                fill="url(#incomeGradient)"
+                radius={[6, 6, 0, 0]}
+                maxBarSize={48}
+                animationDuration={800}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
