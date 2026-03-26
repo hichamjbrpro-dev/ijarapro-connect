@@ -58,6 +58,7 @@ export interface Contract {
   end_date: string;
   file_url?: string;
   days_remaining?: number;
+  rent_amount: number;
 }
 
 export interface Notification {
