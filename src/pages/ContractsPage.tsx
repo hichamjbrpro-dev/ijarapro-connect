@@ -52,6 +52,14 @@ const ContractsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<string>('all');
+
+  // Extract unique years from contracts
+  const uniqueYears = [...new Set(contracts.flatMap(c => {
+    const startYear = new Date(c.start_date).getFullYear();
+    const endYear = new Date(c.end_date).getFullYear();
+    return [startYear, endYear];
+  }))].sort((a, b) => b - a);
   const [tenantPopoverOpen, setTenantPopoverOpen] = useState(false);
 
   // Tenants without contracts
@@ -261,7 +269,28 @@ const ContractsPage = () => {
           </Button>
         ))}
       </div>
-
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
+        <span className="text-xs text-muted-foreground font-medium">{t.filter_year}:</span>
+        <Button
+          variant={yearFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setYearFilter('all')}
+          className="text-xs"
+        >
+          {t.all_years}
+        </Button>
+        {uniqueYears.map(year => (
+          <Button
+            key={year}
+            variant={yearFilter === String(year) ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setYearFilter(String(year))}
+            className="text-xs"
+          >
+            {year}
+          </Button>
+        ))}
+      </div>
       {(() => {
         const filtered = contracts.filter(contract => {
           if (statusFilter !== 'all') {
@@ -278,6 +307,12 @@ const ContractsPage = () => {
           if (propertyFilter !== 'all') {
             const unit = mockUnits.find(u => u.id === contract.unit_id);
             if (unit?.property_id !== propertyFilter) return false;
+          }
+          if (yearFilter !== 'all') {
+            const y = parseInt(yearFilter);
+            const startY = new Date(contract.start_date).getFullYear();
+            const endY = new Date(contract.end_date).getFullYear();
+            if (y < startY || y > endY) return false;
           }
           return true;
         });
