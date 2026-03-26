@@ -122,6 +122,11 @@ export const translations = {
     unit_col: 'الوحدة',
     tenant_col: 'المستأجر',
     date_col: 'التاريخ',
+    search_payments: 'البحث بالاسم أو رقم الوحدة...',
+    sort_asc: 'تصاعدي',
+    sort_desc: 'تنازلي',
+    filter_by_property: 'فلترة حسب العقار',
+    all_properties: 'كل العقارات',
 
     // Contracts
     contracts_title: 'العقود',
@@ -289,6 +294,11 @@ export const translations = {
     unit_col: 'Unité',
     tenant_col: 'Locataire',
     date_col: 'Date',
+    search_payments: 'Rechercher par nom ou n° unité...',
+    sort_asc: 'Croissant',
+    sort_desc: 'Décroissant',
+    filter_by_property: 'Filtrer par propriété',
+    all_properties: 'Toutes les propriétés',
 
     contracts_title: 'Contrats',
     contracts_count: (n: number) => `${n} contrat${n > 1 ? 's' : ''}`,
