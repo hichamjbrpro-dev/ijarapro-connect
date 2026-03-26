@@ -320,7 +320,7 @@ export const translations = {
     actions_col: 'Actions',
     pay_full: 'Paiement complet',
     pay_partial: 'Paiement partiel',
-    payment_history: 'Historique des paiements',
+    payments_log: 'Historique des paiements',
     no_payment_history: 'Aucun paiement enregistré',
     payment_type: 'Type de paiement',
     payment_date_col: 'Date de paiement',
