@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,34 +9,56 @@ import { mockPayments, mockTenants, mockUnits } from '@/data/mockData';
 import { formatCurrency, formatMonth } from '@/utils/formatters';
 import type { PaymentStatus } from '@/types';
 
+// Pre-build lookup maps once (outside component, since mock data is static)
+const tenantMap = new Map(mockTenants.map(t => [t.id, t]));
+const unitMap = new Map(mockUnits.map(u => [u.id, u]));
+
 const PaymentsPage = () => {
   const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState('2026-03');
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | 'all'>('all');
 
-  const monthPayments = mockPayments.filter((p) => p.month === currentMonth);
-  const filtered = statusFilter === 'all' ? monthPayments : monthPayments.filter((p) => p.status === statusFilter);
+  const monthPayments = useMemo(
+    () => mockPayments.filter(p => p.month === currentMonth),
+    [currentMonth]
+  );
 
-  const totalDue = monthPayments.reduce((s, p) => s + p.amount_due, 0);
-  const totalPaid = monthPayments.reduce((s, p) => s + p.amount_paid, 0);
+  const filtered = useMemo(
+    () => statusFilter === 'all' ? monthPayments : monthPayments.filter(p => p.status === statusFilter),
+    [monthPayments, statusFilter]
+  );
 
-  const prevMonth = () => {
-    const [y, m] = currentMonth.split('-').map(Number);
-    const d = new Date(y, m - 2);
-    setCurrentMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  };
-  const nextMonth = () => {
-    const [y, m] = currentMonth.split('-').map(Number);
-    const d = new Date(y, m);
-    setCurrentMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-  };
+  const { totalDue, totalPaid } = useMemo(() => {
+    let due = 0, paid = 0;
+    for (const p of monthPayments) {
+      due += p.amount_due;
+      paid += p.amount_paid;
+    }
+    return { totalDue: due, totalPaid: paid };
+  }, [monthPayments]);
 
-  const filters: { label: string; value: PaymentStatus | 'all' }[] = [
+  const prevMonth = useCallback(() => {
+    setCurrentMonth(prev => {
+      const [y, m] = prev.split('-').map(Number);
+      const d = new Date(y, m - 2);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+  }, []);
+
+  const nextMonth = useCallback(() => {
+    setCurrentMonth(prev => {
+      const [y, m] = prev.split('-').map(Number);
+      const d = new Date(y, m);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+  }, []);
+
+  const filters: { label: string; value: PaymentStatus | 'all' }[] = useMemo(() => [
     { label: t.filter_all, value: 'all' },
     { label: t.filter_paid, value: 'paid' },
     { label: t.filter_unpaid, value: 'unpaid' },
     { label: t.filter_partial, value: 'partial' },
-  ];
+  ], [t]);
 
   return (
     <div className="animate-fade-in">
@@ -95,20 +117,16 @@ const PaymentsPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((p) => {
-                const tenant = mockTenants.find((t) => t.id === p.tenant_id);
-                const unit = mockUnits.find((u) => u.id === p.unit_id);
-                return (
-                  <TableRow key={p.id}>
-                    <TableCell className="font-latin">{unit?.unit_number || '—'}</TableCell>
-                    <TableCell>{tenant?.full_name || '—'}</TableCell>
-                    <TableCell className="font-latin">{formatCurrency(p.amount_due)}</TableCell>
-                    <TableCell className="font-latin">{formatCurrency(p.amount_paid)}</TableCell>
-                    <TableCell><StatusBadge status={p.status} /></TableCell>
-                    <TableCell className="text-muted-foreground font-latin">{p.payment_date || '—'}</TableCell>
-                  </TableRow>
-                );
-              })}
+              {filtered.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-latin">{unitMap.get(p.unit_id)?.unit_number || '—'}</TableCell>
+                  <TableCell>{tenantMap.get(p.tenant_id)?.full_name || '—'}</TableCell>
+                  <TableCell className="font-latin">{formatCurrency(p.amount_due)}</TableCell>
+                  <TableCell className="font-latin">{formatCurrency(p.amount_paid)}</TableCell>
+                  <TableCell><StatusBadge status={p.status} /></TableCell>
+                  <TableCell className="text-muted-foreground font-latin">{p.payment_date || '—'}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
