@@ -381,6 +381,7 @@ export const translations = {
     edit_contract: 'Modifier le contrat',
     delete_contract: 'Supprimer le contrat',
     confirm_delete_contract: 'Voulez-vous vraiment supprimer ce contrat ?',
+    rent_amount_label: 'Montant du loyer (MAD)',
 
     notifications_title: 'Notifications',
     unread_count: (n: number) => `${n} non lue${n > 1 ? 's' : ''}`,
