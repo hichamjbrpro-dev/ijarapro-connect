@@ -424,15 +424,52 @@ const PaymentsPage = () => {
                   <TabsContent value="partial" className="space-y-3 mt-3">
                     <div className="space-y-2">
                       <Label>{t.payment_amount}</Label>
-                      <Input
-                        type="number"
-                        value={payAmount}
-                        onChange={e => setPayAmount(e.target.value)}
-                        max={remaining}
-                        min={1}
-                        placeholder={`1 - ${remaining}`}
-                        className="font-latin"
-                      />
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          value={payAmount}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (val === '' || (parseFloat(val) >= 0 && parseFloat(val) <= remaining)) {
+                              setPayAmount(val);
+                            }
+                          }}
+                          max={remaining}
+                          min={1}
+                          step="any"
+                          placeholder={`أدخل المبلغ (1 - ${remaining})`}
+                          className="font-latin text-lg h-12 pr-3 pl-16"
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">د.م</span>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {[500, 1000, 2000].filter(v => v <= remaining).map(val => (
+                          <Button
+                            key={val}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPayAmount(String(val))}
+                            className="font-latin"
+                          >
+                            {val.toLocaleString('ar-MA')}
+                          </Button>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPayAmount(String(remaining))}
+                        >
+                          المبلغ المتبقي
+                        </Button>
+                      </div>
+                      {payAmount && (
+                        <p className="text-xs text-muted-foreground">
+                          المتبقي بعد الدفع: <span className="font-latin font-medium">{(remaining - parseFloat(payAmount || '0')).toLocaleString('ar-MA')} د.م</span>
+                        </p>
+                      )}
                     </div>
                     <Button
                       onClick={handlePartialPayment}
