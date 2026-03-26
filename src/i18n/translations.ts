@@ -200,6 +200,11 @@ export const translations = {
     stat_units: 'وحدة سكنية',
     stat_satisfaction: 'رضا العملاء',
 
+    edit_property: 'تعديل العقار',
+    delete_property: 'حذف العقار',
+    delete_property_confirm: 'هل أنت متأكد من حذف هذا العقار؟',
+    delete_property_desc: 'سيتم حذف العقار نهائياً ولا يمكن التراجع عن هذا الإجراء.',
+
     // Cities
     cities: ['تطوان', 'الدار البيضاء', 'الرباط', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'مكناس', 'وجدة'],
   },
@@ -245,6 +250,10 @@ export const translations = {
     property_type_house: 'Maison',
     property_type_shop: 'Local commercial',
     property_type_floor: 'Étage',
+    edit_property: 'Modifier le bien',
+    delete_property: 'Supprimer le bien',
+    delete_property_confirm: 'Êtes-vous sûr de vouloir supprimer ce bien ?',
+    delete_property_desc: 'Cette action est irréversible.',
 
     tenants_title: 'Locataires',
     tenants_count: (n: number) => `${n} locataire${n > 1 ? 's' : ''}`,
