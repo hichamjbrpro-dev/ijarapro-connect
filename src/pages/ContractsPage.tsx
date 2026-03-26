@@ -245,6 +245,9 @@ const ContractsPage = () => {
                         </span>
                       </div>
                       <div className="space-y-2 text-sm">
+                        {contract.rent_amount > 0 && (
+                          <div className="flex justify-between"><span className="text-muted-foreground">{t.rent_amount_label}</span><span className="font-latin font-semibold text-primary">{contract.rent_amount.toLocaleString()} د.م</span></div>
+                        )}
                         <div className="flex justify-between"><span className="text-muted-foreground">{t.start_date}</span><span className="font-latin">{formatDate(contract.start_date)}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground">{t.end_date}</span><span className="font-latin">{formatDate(contract.end_date)}</span></div>
                         {contract.days_remaining !== undefined && contract.days_remaining >= 0 && (
