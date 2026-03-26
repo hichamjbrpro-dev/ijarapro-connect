@@ -142,12 +142,18 @@ const ContractsPage = () => {
 
   const handleEditContract = async () => {
     if (!editingContract || !newStartDate || !newEndDate) return;
+    const rentAmount = newRentAmount ? parseFloat(newRentAmount) : 0;
     const { error } = await supabase.from('contracts').update({
-      start_date: newStartDate, end_date: newEndDate,
-      rent_amount: newRentAmount ? parseFloat(newRentAmount) : 0,
+      start_date: newStartDate, end_date: newEndDate, rent_amount: rentAmount,
     }).eq('id', editingContract.id);
     if (error) { toast.error(error.message); return; }
+
+    // Delete old unpaid payments and regenerate
+    await supabase.from('payments').delete().eq('tenant_id', editingContract.tenant_id).eq('unit_id', editingContract.unit_id).eq('status', 'unpaid');
+    await generateMonthlyPayments(editingContract.tenant_id, editingContract.unit_id, newStartDate, newEndDate, rentAmount);
+
     queryClient.invalidateQueries({ queryKey: ['contracts'] });
+    queryClient.invalidateQueries({ queryKey: ['payments'] });
     toast.success(t.edit_contract + ' ✓');
     setEditDialogOpen(false); setEditingContract(null); setNewStartDate(''); setNewEndDate(''); setNewRentAmount('');
   };
