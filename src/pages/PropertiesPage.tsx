@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Building2, Plus, MapPin, Check, ChevronsUpDown, PlusCircle, Pencil, Trash2, MoreVertical } from 'lucide-react';
+import { Building2, Plus, MapPin, Check, ChevronsUpDown, PlusCircle, Pencil, Trash2, MoreVertical, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
 import EmptyState from '@/components/shared/EmptyState';
@@ -18,11 +19,28 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Property, PropertyType } from '@/types';
 
+interface FormUnit {
+  unit_number: string;
+  type: 'apartment' | 'shop' | 'studio' | 'floor';
+  floor: string;
+  area_sqm: string;
+  monthly_rent: string;
+}
+
+const emptyUnit = (): FormUnit => ({ unit_number: '', type: 'apartment', floor: '', area_sqm: '', monthly_rent: '' });
+
 const propertyTypeKeys: Record<string, 'property_type_apartment_building' | 'property_type_house' | 'property_type_shop' | 'property_type_floor'> = {
   apartment_building: 'property_type_apartment_building',
   house: 'property_type_house',
   shop: 'property_type_shop',
   floor: 'property_type_floor',
+};
+
+const unitTypeKeys: Record<string, 'unit_type_apartment' | 'unit_type_shop' | 'unit_type_studio' | 'unit_type_floor'> = {
+  apartment: 'unit_type_apartment',
+  shop: 'unit_type_shop',
+  studio: 'unit_type_studio',
+  floor: 'unit_type_floor',
 };
 
 const PropertyCard = ({ property, onEdit, onDelete }: { property: Property; onEdit: (p: Property) => void; onDelete: (p: Property) => void }) => {
@@ -96,46 +114,96 @@ const PropertiesPage = () => {
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState('');
   const [formAddress, setFormAddress] = useState('');
+  const [formUnits, setFormUnits] = useState<FormUnit[]>([]);
 
   const allCities = useMemo(() => [...t.cities, ...customCities], [t.cities, customCities]);
 
   const filtered = filterCity === 'all' ? properties : properties.filter((p) => p.city === filterCity);
 
   const resetForm = () => {
-    setFormName(''); setFormType(''); setSelectedCity(''); setFormAddress(''); setEditingProperty(null);
+    setFormName(''); setFormType(''); setSelectedCity(''); setFormAddress('');
+    setEditingProperty(null); setFormUnits([]);
   };
 
   const openAddDialog = () => { resetForm(); setDialogOpen(true); };
 
-  const openEditDialog = (property: Property) => {
+  const openEditDialog = async (property: Property) => {
     setEditingProperty(property); setFormName(property.name); setFormType(property.type);
-    setSelectedCity(property.city); setFormAddress(property.address); setDialogOpen(true);
+    setSelectedCity(property.city); setFormAddress(property.address);
+    // Load existing units for this property
+    const { data: existingUnits } = await supabase.from('units').select('*').eq('property_id', property.id);
+    if (existingUnits && existingUnits.length > 0) {
+      setFormUnits(existingUnits.map(u => ({
+        unit_number: u.unit_number,
+        type: u.type as FormUnit['type'],
+        floor: u.floor?.toString() || '',
+        area_sqm: u.area_sqm?.toString() || '',
+        monthly_rent: u.monthly_rent?.toString() || '',
+      })));
+    } else {
+      setFormUnits([]);
+    }
+    setDialogOpen(true);
+  };
+
+  const addUnit = () => setFormUnits(prev => [...prev, emptyUnit()]);
+  const removeUnit = (idx: number) => setFormUnits(prev => prev.filter((_, i) => i !== idx));
+  const updateUnit = (idx: number, field: keyof FormUnit, value: string) => {
+    setFormUnits(prev => prev.map((u, i) => i === idx ? { ...u, [field]: value } : u));
   };
 
   const handleSave = async () => {
     if (!formName.trim()) return;
+    let propertyId = editingProperty?.id;
+
     if (editingProperty) {
       const { error } = await supabase.from('properties').update({
         name: formName, type: (formType || editingProperty.type) as PropertyType,
         city: selectedCity || editingProperty.city, address: formAddress,
+        units_count: formUnits.length || editingProperty.units_count,
       }).eq('id', editingProperty.id);
       if (error) { toast.error(error.message); return; }
+      // Delete old units and re-insert
+      await supabase.from('units').delete().eq('property_id', editingProperty.id);
     } else {
-      const { error } = await supabase.from('properties').insert({
+      const { data, error } = await supabase.from('properties').insert({
         name: formName, type: (formType || 'apartment_building') as PropertyType,
         city: selectedCity || '', address: formAddress,
-      });
+        units_count: formUnits.length,
+      }).select('id').single();
       if (error) { toast.error(error.message); return; }
+      propertyId = data.id;
     }
+
+    // Insert units
+    if (formUnits.length > 0 && propertyId) {
+      const unitsToInsert = formUnits.filter(u => u.unit_number.trim()).map(u => ({
+        property_id: propertyId!,
+        unit_number: u.unit_number,
+        type: u.type,
+        floor: u.floor ? parseInt(u.floor) : null,
+        area_sqm: u.area_sqm ? parseFloat(u.area_sqm) : null,
+        monthly_rent: u.monthly_rent ? parseFloat(u.monthly_rent) : 0,
+        status: 'vacant' as const,
+      }));
+      if (unitsToInsert.length > 0) {
+        const { error } = await supabase.from('units').insert(unitsToInsert);
+        if (error) { toast.error(error.message); return; }
+      }
+    }
+
     queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['units'] });
     setDialogOpen(false); resetForm();
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    await supabase.from('units').delete().eq('property_id', deleteTarget.id);
     const { error } = await supabase.from('properties').delete().eq('id', deleteTarget.id);
     if (error) { toast.error(error.message); return; }
     queryClient.invalidateQueries({ queryKey: ['properties'] });
+    queryClient.invalidateQueries({ queryKey: ['units'] });
     setDeleteTarget(null);
   };
 
@@ -151,7 +219,7 @@ const PropertiesPage = () => {
       </PageHeader>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingProperty ? t.edit_property : t.add_new_property}</DialogTitle>
           </DialogHeader>
@@ -200,6 +268,68 @@ const PropertiesPage = () => {
               </PopoverContent>
             </Popover>
             <Input placeholder={t.address} className="h-10 text-right" value={formAddress} onChange={e => setFormAddress(e.target.value)} />
+
+            {/* Units Section */}
+            <Separator />
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-foreground">{t.units_section}</h4>
+              <Button type="button" variant="outline" size="sm" onClick={addUnit}>
+                <Plus className="w-3 h-3 ml-1" />
+                {t.add_unit}
+              </Button>
+            </div>
+
+            {formUnits.map((unit, idx) => (
+              <div key={idx} className="border border-border rounded-lg p-3 space-y-3 relative bg-muted/30">
+                <Button
+                  type="button" variant="ghost" size="icon"
+                  className="absolute top-1 left-1 h-6 w-6 text-destructive hover:text-destructive"
+                  onClick={() => removeUnit(idx)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder={t.unit_number_label}
+                    className="h-9 text-right text-sm"
+                    value={unit.unit_number}
+                    onChange={e => updateUnit(idx, 'unit_number', e.target.value)}
+                  />
+                  <Select value={unit.type} onValueChange={v => updateUnit(idx, 'type', v)}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder={t.unit_type_label} /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(unitTypeKeys).map(([k, tKey]) => (
+                        <SelectItem key={k} value={k}>{t[tKey]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    placeholder={t.unit_floor}
+                    className="h-9 text-right text-sm"
+                    type="number"
+                    value={unit.floor}
+                    onChange={e => updateUnit(idx, 'floor', e.target.value)}
+                  />
+                  <Input
+                    placeholder={t.unit_area}
+                    className="h-9 text-right text-sm"
+                    type="number"
+                    value={unit.area_sqm}
+                    onChange={e => updateUnit(idx, 'area_sqm', e.target.value)}
+                  />
+                  <Input
+                    placeholder={t.unit_rent}
+                    className="h-9 text-right text-sm"
+                    type="number"
+                    value={unit.monthly_rent}
+                    onChange={e => updateUnit(idx, 'monthly_rent', e.target.value)}
+                  />
+                </div>
+              </div>
+            ))}
+
             <Button className="w-full bg-primary hover:bg-primary-light text-primary-foreground" onClick={handleSave}>
               {t.save}
             </Button>
