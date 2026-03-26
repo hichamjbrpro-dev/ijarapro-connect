@@ -127,6 +127,11 @@ export const translations = {
     sort_desc: 'تنازلي',
     filter_by_property: 'فلترة حسب العقار',
     all_properties: 'كل العقارات',
+    property_col: 'العقار',
+    record_payment: 'تسجيل دفعة',
+    payment_amount: 'مبلغ الدفعة',
+    payment_recorded: 'تم تسجيل الدفعة بنجاح',
+    actions_col: 'إجراءات',
 
     // Contracts
     contracts_title: 'العقود',
@@ -299,6 +304,11 @@ export const translations = {
     sort_desc: 'Décroissant',
     filter_by_property: 'Filtrer par propriété',
     all_properties: 'Toutes les propriétés',
+    property_col: 'Propriété',
+    record_payment: 'Enregistrer un paiement',
+    payment_amount: 'Montant du paiement',
+    payment_recorded: 'Paiement enregistré avec succès',
+    actions_col: 'Actions',
 
     contracts_title: 'Contrats',
     contracts_count: (n: number) => `${n} contrat${n > 1 ? 's' : ''}`,
