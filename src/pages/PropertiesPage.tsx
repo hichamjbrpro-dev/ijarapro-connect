@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { Building2, Plus, MapPin } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Building2, Plus, MapPin, Check, ChevronsUpDown, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import PageHeader from '@/components/shared/PageHeader';
 import EmptyState from '@/components/shared/EmptyState';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -59,6 +62,12 @@ const PropertiesPage = () => {
   const { t } = useTranslation();
   const [filterCity, setFilterCity] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [customCities, setCustomCities] = useState<string[]>([]);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [cityPopoverOpen, setCityPopoverOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+
+  const allCities = useMemo(() => [...t.cities, ...customCities], [t.cities, customCities]);
 
   const filtered = filterCity === 'all'
     ? mockProperties
@@ -88,14 +97,62 @@ const PropertiesPage = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Select>
-                <SelectTrigger className="h-10"><SelectValue placeholder={t.city} /></SelectTrigger>
-                <SelectContent>
-                  {t.cities.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={cityPopoverOpen} onOpenChange={setCityPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={cityPopoverOpen}
+                    className="w-full h-10 justify-between text-right font-normal"
+                  >
+                    {selectedCity || <span className="text-muted-foreground">{t.city}</span>}
+                    <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder={t.city}
+                      value={citySearch}
+                      onValueChange={setCitySearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty className="p-0">
+                        {citySearch.trim() && (
+                          <button
+                            className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-primary hover:bg-accent cursor-pointer"
+                            onClick={() => {
+                              const newCity = citySearch.trim();
+                              setCustomCities(prev => [...prev, newCity]);
+                              setSelectedCity(newCity);
+                              setCitySearch('');
+                              setCityPopoverOpen(false);
+                            }}
+                          >
+                            <PlusCircle className="h-4 w-4" />
+                            إضافة "{citySearch.trim()}"
+                          </button>
+                        )}
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {allCities.map((city) => (
+                          <CommandItem
+                            key={city}
+                            value={city}
+                            onSelect={() => {
+                              setSelectedCity(city);
+                              setCityPopoverOpen(false);
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", selectedCity === city ? "opacity-100" : "opacity-0")} />
+                            {city}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Input placeholder={t.address} className="h-10 text-right" />
               <Button className="w-full bg-primary hover:bg-primary-light text-primary-foreground" onClick={() => setDialogOpen(false)}>
                 {t.save}
@@ -112,7 +169,7 @@ const PropertiesPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t.all_cities}</SelectItem>
-            {t.cities.map((c) => (
+            {allCities.map((c) => (
               <SelectItem key={c} value={c}>{c}</SelectItem>
             ))}
           </SelectContent>
