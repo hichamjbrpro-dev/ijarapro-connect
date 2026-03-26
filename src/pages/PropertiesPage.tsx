@@ -62,6 +62,12 @@ const PropertiesPage = () => {
   const { t } = useTranslation();
   const [filterCity, setFilterCity] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [customCities, setCustomCities] = useState<string[]>([]);
+  const [selectedCity, setSelectedCity] = useState('');
+  const [cityPopoverOpen, setCityPopoverOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
+
+  const allCities = useMemo(() => [...t.cities, ...customCities], [t.cities, customCities]);
 
   const filtered = filterCity === 'all'
     ? mockProperties
