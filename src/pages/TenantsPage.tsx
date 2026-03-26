@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Pencil, Trash2, Upload, X, FileText, Image, FilePlus } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Upload, X, FileText, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import PageHeader from '@/components/shared/PageHeader';
 import { useTranslation } from '@/hooks/useTranslation';
-import { mockTenants, mockUnits, mockProperties, mockContracts } from '@/data/mockData';
+import { useTenants, useUnits, useProperties, useContracts } from '@/hooks/useSupabaseData';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDate } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Tenant } from '@/types';
@@ -18,95 +20,89 @@ import { Tenant } from '@/types';
 const TenantsPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { data: tenants = [], isLoading } = useTenants();
+  const { data: units = [] } = useUnits();
+  const { data: properties = [] } = useProperties();
+  const { data: contracts = [] } = useContracts();
   const [search, setSearch] = useState('');
-  const [tenants, setTenants] = useState<Tenant[]>(mockTenants);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [deletingTenant, setDeletingTenant] = useState<Tenant | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [formData, setFormData] = useState({
-    full_name: '', cin: '', phone: '', email: '', unit_id: '',
-  });
+  const [formData, setFormData] = useState({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
 
   const filtered = tenants.filter((tenant) =>
-    tenant.full_name.includes(search) || tenant.cin.toLowerCase().includes(search.toLowerCase())
+    tenant.full_name.includes(search) || (tenant.cin || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  const vacantUnits = mockUnits.filter((u) => u.status === 'vacant');
+  const vacantUnits = units.filter((u) => u.status === 'vacant');
 
-  const clearFile = () => {
-    setAttachedFile(null);
-    setFilePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  const clearFile = () => { setAttachedFile(null); setFilePreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-      toast.error(t.file_type_error);
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(t.file_size_error);
-      return;
-    }
+    if (!validTypes.includes(file.type)) { toast.error(t.file_type_error); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error(t.file_size_error); return; }
     setAttachedFile(file);
     setFilePreview(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
   };
 
-  const openAddSheet = () => {
-    setEditingTenant(null);
-    setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
-    clearFile();
-    setSheetOpen(true);
-  };
+  const openAddSheet = () => { setEditingTenant(null); setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' }); clearFile(); setSheetOpen(true); };
 
   const openEditSheet = (tenant: Tenant) => {
     setEditingTenant(tenant);
-    setFormData({ full_name: tenant.full_name, cin: tenant.cin, phone: tenant.phone, email: tenant.email || '', unit_id: tenant.unit_id });
-    clearFile();
-    setSheetOpen(true);
+    setFormData({ full_name: tenant.full_name, cin: tenant.cin || '', phone: tenant.phone || '', email: tenant.email || '', unit_id: tenant.unit_id });
+    clearFile(); setSheetOpen(true);
   };
 
-  const handleSave = () => {
-    if (!formData.full_name || !formData.cin) {
-      toast.error(t.fill_required);
-      return;
-    }
+  const handleSave = async () => {
+    if (!formData.full_name || !formData.cin) { toast.error(t.fill_required); return; }
     if (editingTenant) {
-      setTenants((prev) => prev.map((tenant) => tenant.id === editingTenant.id ? { ...tenant, ...formData } : tenant));
+      const { error } = await supabase.from('tenants').update({
+        full_name: formData.full_name, cin: formData.cin, phone: formData.phone,
+        email: formData.email || null, unit_id: formData.unit_id || null,
+      }).eq('id', editingTenant.id);
+      if (error) { toast.error(error.message); return; }
       toast.success(t.tenant_updated(formData.full_name));
     } else {
-      const newTenant: Tenant = { id: `t-new-${Date.now()}`, owner_id: '1', ...formData, move_in_date: new Date().toISOString().split('T')[0] };
-      setTenants((prev) => [...prev, newTenant]);
+      const { error } = await supabase.from('tenants').insert({
+        full_name: formData.full_name, cin: formData.cin, phone: formData.phone,
+        email: formData.email || null, unit_id: formData.unit_id || null,
+      });
+      if (error) { toast.error(error.message); return; }
       toast.success(t.tenant_added(formData.full_name));
     }
+    queryClient.invalidateQueries({ queryKey: ['tenants'] });
     setFormData({ full_name: '', cin: '', phone: '', email: '', unit_id: '' });
-    setEditingTenant(null);
-    setSheetOpen(false);
+    setEditingTenant(null); setSheetOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingTenant) return;
-    setTenants((prev) => prev.filter((tenant) => tenant.id !== deletingTenant.id));
+    const { error } = await supabase.from('tenants').delete().eq('id', deletingTenant.id);
+    if (error) { toast.error(error.message); return; }
+    queryClient.invalidateQueries({ queryKey: ['tenants'] });
     toast.success(t.tenant_deleted(deletingTenant.full_name));
     setDeletingTenant(null);
   };
 
   const getUnitLabel = (unitId: string) => {
-    const unit = mockUnits.find((u) => u.id === unitId);
+    const unit = units.find((u) => u.id === unitId);
     if (!unit) return '';
-    const prop = mockProperties.find((p) => p.id === unit.property_id);
+    const prop = properties.find((p) => p.id === unit.property_id);
     return `${prop?.name} - ${t.unit} ${unit.unit_number}`;
   };
 
   const availableUnits = editingTenant
-    ? [...vacantUnits, ...mockUnits.filter((u) => u.id === editingTenant.unit_id)]
+    ? [...vacantUnits, ...units.filter((u) => u.id === editingTenant.unit_id)]
     : vacantUnits;
+
+  if (isLoading) return <div className="animate-fade-in p-8 text-center text-muted-foreground">جاري التحميل...</div>;
 
   return (
     <div className="animate-fade-in">
@@ -114,16 +110,11 @@ const TenantsPage = () => {
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button className="bg-primary hover:bg-primary-light text-primary-foreground" onClick={openAddSheet}>
-              <Plus className="w-4 h-4 ml-2" />
-              {t.add_tenant}
+              <Plus className="w-4 h-4 ml-2" />{t.add_tenant}
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="text-right">
-                {editingTenant ? t.edit_tenant : t.add_new_tenant}
-              </SheetTitle>
-            </SheetHeader>
+            <SheetHeader><SheetTitle className="text-right">{editingTenant ? t.edit_tenant : t.add_new_tenant}</SheetTitle></SheetHeader>
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
                 <Label className="text-right block">{t.full_name} *</Label>
@@ -146,11 +137,7 @@ const TenantsPage = () => {
                 {availableUnits.length > 0 ? (
                   <Select value={formData.unit_id} onValueChange={(v) => setFormData({ ...formData, unit_id: v })}>
                     <SelectTrigger className="h-10"><SelectValue placeholder={t.select_unit} /></SelectTrigger>
-                    <SelectContent>
-                      {availableUnits.map((u) => (
-                        <SelectItem key={u.id} value={u.id}>{getUnitLabel(u.id)}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent>{availableUnits.map((u) => <SelectItem key={u.id} value={u.id}>{getUnitLabel(u.id)}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (
                   <p className="text-sm text-muted-foreground bg-muted rounded-md p-3">{t.no_vacant_units}</p>
@@ -161,26 +148,18 @@ const TenantsPage = () => {
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={handleFileChange} className="hidden" />
                 {!attachedFile ? (
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer">
-                    <Upload className="w-8 h-8" />
-                    <span className="text-sm">{t.upload_hint}</span>
-                    <span className="text-xs">{t.upload_size_hint}</span>
+                    <Upload className="w-8 h-8" /><span className="text-sm">{t.upload_hint}</span><span className="text-xs">{t.upload_size_hint}</span>
                   </button>
                 ) : (
                   <div className="border border-border rounded-lg p-3 flex items-center gap-3 bg-muted/50">
-                    {filePreview ? (
-                      <img src={filePreview} alt={t.preview_alt} className="w-12 h-12 rounded object-cover shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 rounded bg-destructive/10 flex items-center justify-center shrink-0">
-                        <FileText className="w-6 h-6 text-destructive" />
-                      </div>
+                    {filePreview ? <img src={filePreview} alt={t.preview_alt} className="w-12 h-12 rounded object-cover shrink-0" /> : (
+                      <div className="w-12 h-12 rounded bg-destructive/10 flex items-center justify-center shrink-0"><FileText className="w-6 h-6 text-destructive" /></div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{attachedFile.name}</p>
                       <p className="text-xs text-muted-foreground">{(attachedFile.size / 1024).toFixed(0)} {t.file_size_kb}</p>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={clearFile}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={clearFile}><X className="h-4 w-4" /></Button>
                   </div>
                 )}
               </div>
@@ -213,8 +192,8 @@ const TenantsPage = () => {
             </TableHeader>
             <TableBody>
               {filtered.map((tenant) => {
-                const unit = mockUnits.find((u) => u.id === tenant.unit_id);
-                const property = unit ? mockProperties.find((p) => p.id === unit.property_id) : null;
+                const unit = units.find((u) => u.id === tenant.unit_id);
+                const property = unit ? properties.find((p) => p.id === unit.property_id) : null;
                 return (
                   <TableRow key={tenant.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/tenants/${tenant.id}`)}>
                     <TableCell className="font-medium text-primary hover:underline">{tenant.full_name}</TableCell>
@@ -225,7 +204,7 @@ const TenantsPage = () => {
                     <TableCell className="text-muted-foreground">{formatDate(tenant.move_in_date)}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
-                        {!mockContracts.some(c => c.tenant_id === tenant.id) && (
+                        {!contracts.some(c => c.tenant_id === tenant.id) && (
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-success" title={t.add_contract} onClick={(e) => { e.stopPropagation(); navigate('/contracts'); }}>
                             <FilePlus className="h-4 w-4" />
                           </Button>
@@ -250,15 +229,11 @@ const TenantsPage = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-right">{t.confirm_delete}</AlertDialogTitle>
-            <AlertDialogDescription className="text-right">
-              {deletingTenant ? t.confirm_delete_msg(deletingTenant.full_name) : ''}
-            </AlertDialogDescription>
+            <AlertDialogDescription className="text-right">{deletingTenant ? t.confirm_delete_msg(deletingTenant.full_name) : ''}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row-reverse gap-2">
             <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {t.delete}
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t.delete}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

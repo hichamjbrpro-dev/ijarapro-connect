@@ -3,23 +3,31 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import PageHeader from '@/components/shared/PageHeader';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { useTranslation } from '@/hooks/useTranslation';
-import { mockProperties, mockPayments, mockNotifications, mockMonthlyIncome, mockTenants } from '@/data/mockData';
+import { useProperties, usePayments, useNotifications, useMonthlyIncome, useTenants } from '@/hooks/useSupabaseData';
 import { formatCurrency } from '@/utils/formatters';
 
 const DashboardPage = () => {
   const { t } = useTranslation();
-  const totalUnits = mockProperties.reduce((s, p) => s + (p.units_count || 0), 0);
-  const occupiedUnits = mockProperties.reduce((s, p) => s + (p.occupied_count || 0), 0);
-  const monthlyIncome = mockPayments
-    .filter((p) => p.month === '2025-03' && p.status !== 'unpaid')
+  const { data: properties = [] } = useProperties();
+  const { data: payments = [] } = usePayments();
+  const { data: notifications = [] } = useNotifications();
+  const { data: tenants = [] } = useTenants();
+  const { data: monthlyIncome = [] } = useMonthlyIncome();
+
+  const totalUnits = properties.reduce((s, p) => s + (p.units_count || 0), 0);
+  const occupiedUnits = properties.reduce((s, p) => s + (p.occupied_count || 0), 0);
+
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const monthlyIncomeVal = payments
+    .filter((p) => p.month === currentMonth && p.status !== 'unpaid')
     .reduce((s, p) => s + p.amount_paid, 0);
-  const overduePayments = mockPayments.filter((p) => p.status === 'unpaid').length;
+  const overduePayments = payments.filter((p) => p.status === 'unpaid').length;
 
   const kpis = [
-    { label: t.kpi_total_properties, value: mockProperties.length, icon: Building2, color: 'text-primary' },
+    { label: t.kpi_total_properties, value: properties.length, icon: Building2, color: 'text-primary' },
     { label: t.kpi_total_units, value: totalUnits, icon: Home, color: 'text-primary' },
-    { label: t.kpi_tenants, value: mockTenants.length, icon: Users, color: 'text-primary' },
-    { label: t.kpi_monthly_income, value: formatCurrency(monthlyIncome), icon: TrendingUp, color: 'text-success' },
+    { label: t.kpi_tenants, value: tenants.length, icon: Users, color: 'text-primary' },
+    { label: t.kpi_monthly_income, value: formatCurrency(monthlyIncomeVal), icon: TrendingUp, color: 'text-success' },
     { label: t.kpi_overdue, value: overduePayments, icon: AlertCircle, color: 'text-destructive' },
   ];
 
@@ -49,19 +57,18 @@ const DashboardPage = () => {
         <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-success rounded-full transition-all duration-500"
-            style={{ width: `${(occupiedUnits / totalUnits) * 100}%` }}
+            style={{ width: `${totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0}%` }}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-      <div className="lg:col-span-3 bg-card rounded-lg p-5 shadow-card border border-border">
+        <div className="lg:col-span-3 bg-card rounded-lg p-5 shadow-card border border-border">
           <div className="flex items-center justify-between mb-5">
             <h3 className="text-sm font-semibold">{t.monthly_income_chart}</h3>
-            <span className="text-xs text-muted-foreground font-latin">2025 - 2026</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={mockMonthlyIncome} barCategoryGap="20%">
+            <BarChart data={monthlyIncome} barCategoryGap="20%">
               <defs>
                 <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
@@ -69,39 +76,14 @@ const DashboardPage = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                width={40}
-              />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} width={40} />
               <Tooltip
                 formatter={(value: number) => [formatCurrency(value), t.income_label]}
-                contentStyle={{
-                  borderRadius: 10,
-                  border: '1px solid hsl(var(--border))',
-                  background: 'hsl(var(--card))',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  fontSize: 13,
-                  direction: 'rtl',
-                }}
+                contentStyle={{ borderRadius: 10, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: 13, direction: 'rtl' }}
                 cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }}
               />
-              <Bar
-                dataKey="income"
-                fill="url(#incomeGradient)"
-                radius={[6, 6, 0, 0]}
-                maxBarSize={48}
-                animationDuration={800}
-                animationEasing="ease-out"
-              />
+              <Bar dataKey="income" fill="url(#incomeGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} animationDuration={800} animationEasing="ease-out" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -109,15 +91,13 @@ const DashboardPage = () => {
         <div className="lg:col-span-2 bg-card rounded-lg p-4 shadow-card border border-border">
           <h3 className="text-sm font-semibold mb-4">{t.recent_alerts}</h3>
           <div className="space-y-3">
-            {mockNotifications.slice(0, 5).map((notif) => (
+            {notifications.slice(0, 5).map((notif) => (
               <div key={notif.id} className="flex items-start gap-3 text-sm">
-                <div
-                  className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                    notif.type === 'overdue' ? 'bg-destructive' :
-                    notif.type === 'contract_expiring' ? 'bg-warning' :
-                    notif.type === 'payment_received' ? 'bg-success' : 'bg-primary'
-                  }`}
-                />
+                <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                  notif.type === 'overdue' ? 'bg-destructive' :
+                  notif.type === 'contract_expiring' ? 'bg-warning' :
+                  notif.type === 'payment_received' ? 'bg-success' : 'bg-primary'
+                }`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-foreground leading-relaxed">{notif.message}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 font-latin">
@@ -134,8 +114,8 @@ const DashboardPage = () => {
         <div className="bg-card rounded-lg p-4 shadow-card border border-border border-r-4 border-r-destructive">
           <h3 className="text-sm font-semibold text-destructive mb-3">{t.overdue_rents}</h3>
           <div className="space-y-2">
-            {mockPayments.filter((p) => p.status === 'unpaid').map((p) => {
-              const tenant = mockTenants.find((t) => t.id === p.tenant_id);
+            {payments.filter((p) => p.status === 'unpaid').slice(0, 10).map((p) => {
+              const tenant = tenants.find((tn) => tn.id === p.tenant_id);
               return (
                 <div key={p.id} className="flex items-center justify-between text-sm">
                   <span>{tenant?.full_name}</span>
