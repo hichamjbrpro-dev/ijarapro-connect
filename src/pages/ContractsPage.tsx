@@ -269,7 +269,28 @@ const ContractsPage = () => {
           </Button>
         ))}
       </div>
-
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
+        <span className="text-xs text-muted-foreground font-medium">{t.filter_year}:</span>
+        <Button
+          variant={yearFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setYearFilter('all')}
+          className="text-xs"
+        >
+          {t.all_years}
+        </Button>
+        {uniqueYears.map(year => (
+          <Button
+            key={year}
+            variant={yearFilter === String(year) ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setYearFilter(String(year))}
+            className="text-xs"
+          >
+            {year}
+          </Button>
+        ))}
+      </div>
       {(() => {
         const filtered = contracts.filter(contract => {
           if (statusFilter !== 'all') {
