@@ -294,6 +294,11 @@ export const translations = {
     unit_col: 'Unité',
     tenant_col: 'Locataire',
     date_col: 'Date',
+    search_payments: 'Rechercher par nom ou n° unité...',
+    sort_asc: 'Croissant',
+    sort_desc: 'Décroissant',
+    filter_by_property: 'Filtrer par propriété',
+    all_properties: 'Toutes les propriétés',
 
     contracts_title: 'Contrats',
     contracts_count: (n: number) => `${n} contrat${n > 1 ? 's' : ''}`,
