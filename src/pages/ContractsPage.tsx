@@ -395,6 +395,13 @@ const ContractsPage = () => {
             <div className="space-y-2">
               <Label>{t.rent_amount_label}</Label>
               <Input type="number" placeholder="0" value={newRentAmount} onChange={e => setNewRentAmount(e.target.value)} />
+              <div className="flex gap-2 flex-wrap">
+                {[1000, 1500, 2000, 2500, 3000, 5000].map(amount => (
+                  <Button key={amount} type="button" variant="outline" size="sm" className="text-xs font-latin" onClick={() => setNewRentAmount(amount.toString())}>
+                    {amount.toLocaleString()}
+                  </Button>
+                ))}
+              </div>
             </div>
             <Button className="w-full" onClick={handleEditContract}>{t.save}</Button>
           </div>
