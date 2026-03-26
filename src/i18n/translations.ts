@@ -204,6 +204,14 @@ export const translations = {
     delete_property: 'حذف العقار',
     delete_property_confirm: 'هل أنت متأكد من حذف هذا العقار؟',
     delete_property_desc: 'سيتم حذف العقار نهائياً ولا يمكن التراجع عن هذا الإجراء.',
+    units_section: 'الوحدات',
+    add_unit: 'إضافة وحدة',
+    unit_number_label: 'رقم الوحدة',
+    unit_floor: 'الطابق',
+    unit_area: 'المساحة (م²)',
+    unit_rent: 'الإيجار الشهري',
+    unit_type_label: 'نوع الوحدة',
+    remove_unit: 'حذف',
 
     // Cities
     cities: ['تطوان', 'الدار البيضاء', 'الرباط', 'مراكش', 'طنجة', 'فاس', 'أكادير', 'مكناس', 'وجدة'],
