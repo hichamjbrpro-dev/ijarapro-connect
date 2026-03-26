@@ -157,6 +157,7 @@ export const translations = {
     edit_contract: 'تعديل العقد',
     delete_contract: 'حذف العقد',
     confirm_delete_contract: 'هل أنت متأكد من حذف هذا العقد؟',
+    rent_amount_label: 'مبلغ الكراء (د.م)',
 
     // Notifications
     notifications_title: 'التنبيهات',
