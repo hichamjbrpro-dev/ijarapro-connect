@@ -132,6 +132,15 @@ export const translations = {
     payment_amount: 'مبلغ الدفعة',
     payment_recorded: 'تم تسجيل الدفعة بنجاح',
     actions_col: 'إجراءات',
+    pay_full: 'دفع كامل',
+    pay_partial: 'دفع جزئي',
+    payment_history: 'سجل الدفعات',
+    no_payment_history: 'لا توجد دفعات مسجلة',
+    payment_type: 'نوع الدفع',
+    payment_date_col: 'تاريخ الدفع',
+    amount_col: 'المبلغ',
+    full_payment: 'دفع كامل',
+    partial_payment: 'دفع جزئي',
 
     // Contracts
     contracts_title: 'العقود',
