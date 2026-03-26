@@ -308,6 +308,12 @@ const ContractsPage = () => {
             const unit = mockUnits.find(u => u.id === contract.unit_id);
             if (unit?.property_id !== propertyFilter) return false;
           }
+          if (yearFilter !== 'all') {
+            const y = parseInt(yearFilter);
+            const startY = new Date(contract.start_date).getFullYear();
+            const endY = new Date(contract.end_date).getFullYear();
+            if (y < startY || y > endY) return false;
+          }
           return true;
         });
 
