@@ -71,10 +71,10 @@ const AppSidebar = () => {
         {sidebarOpen && user && (
           <div className="flex items-center gap-3 mb-3 px-1">
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
-              {user.name.charAt(0)}
+              {(user.user_metadata?.full_name || user.email || '?').charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+              <p className="text-sm font-medium text-foreground truncate">{user.user_metadata?.full_name || user.email}</p>
               <p className="text-xs text-muted-foreground truncate font-latin">{user.email}</p>
             </div>
             <button onClick={logout} className="text-muted-foreground hover:text-destructive transition-colors">
