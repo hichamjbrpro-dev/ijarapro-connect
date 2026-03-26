@@ -278,10 +278,15 @@ const ContractsPage = () => {
             onChange={e => setYearFilter(e.target.value)}
             className="bg-transparent text-sm font-semibold text-foreground border-none outline-none cursor-pointer"
           >
-            <option value="all">{t.all_years}</option>
-            {uniqueYears.map(year => (
-              <option key={year} value={String(year)}>{year}</option>
-            ))}
+            <option value="all">{t.all_years} ({contracts.length})</option>
+            {uniqueYears.map(year => {
+              const count = contracts.filter(c => {
+                const s = new Date(c.start_date).getFullYear();
+                const e = new Date(c.end_date).getFullYear();
+                return year >= s && year <= e;
+              }).length;
+              return <option key={year} value={String(year)}>{year} ({count})</option>;
+            })}
           </select>
         </div>
       </div>
