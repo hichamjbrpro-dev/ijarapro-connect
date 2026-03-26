@@ -304,6 +304,11 @@ export const translations = {
     sort_desc: 'Décroissant',
     filter_by_property: 'Filtrer par propriété',
     all_properties: 'Toutes les propriétés',
+    property_col: 'Propriété',
+    record_payment: 'Enregistrer un paiement',
+    payment_amount: 'Montant du paiement',
+    payment_recorded: 'Paiement enregistré avec succès',
+    actions_col: 'Actions',
 
     contracts_title: 'Contrats',
     contracts_count: (n: number) => `${n} contrat${n > 1 ? 's' : ''}`,
