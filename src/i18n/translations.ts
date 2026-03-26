@@ -127,6 +127,11 @@ export const translations = {
     sort_desc: 'تنازلي',
     filter_by_property: 'فلترة حسب العقار',
     all_properties: 'كل العقارات',
+    property_col: 'العقار',
+    record_payment: 'تسجيل دفعة',
+    payment_amount: 'مبلغ الدفعة',
+    payment_recorded: 'تم تسجيل الدفعة بنجاح',
+    actions_col: 'إجراءات',
 
     // Contracts
     contracts_title: 'العقود',
