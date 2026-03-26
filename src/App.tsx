@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,12 +15,34 @@ import TenantDetailPage from "@/pages/TenantDetailPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import NotFound from "@/pages/NotFound";
 import { useAuthStore } from "@/store/authStore";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const PrivateRoute = () => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">جاري التحميل...</div>;
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+};
+
+const AuthListener = ({ children }: { children: React.ReactNode }) => {
+  const setSession = useAuthStore((s) => s.setSession);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setSession]);
+
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -28,23 +51,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
+        <AuthListener>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
 
-          <Route element={<PrivateRoute />}>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<DashboardPage />} />
-              <Route path="/properties" element={<PropertiesPage />} />
-              <Route path="/tenants" element={<TenantsPage />} />
-              <Route path="/tenants/:id" element={<TenantDetailPage />} />
-              <Route path="/payments" element={<PaymentsPage />} />
-              <Route path="/contracts" element={<ContractsPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
+            <Route element={<PrivateRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<DashboardPage />} />
+                <Route path="/properties" element={<PropertiesPage />} />
+                <Route path="/tenants" element={<TenantsPage />} />
+                <Route path="/tenants/:id" element={<TenantDetailPage />} />
+                <Route path="/payments" element={<PaymentsPage />} />
+                <Route path="/contracts" element={<ContractsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthListener>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
