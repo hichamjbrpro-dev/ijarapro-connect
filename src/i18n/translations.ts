@@ -252,6 +252,12 @@ export const translations = {
     property_type_house: 'Maison',
     property_type_shop: 'Local commercial',
     property_type_floor: 'Étage',
+    edit_property: 'Modifier le bien',
+    delete_property: 'Supprimer le bien',
+    delete_property_confirm: 'Êtes-vous sûr de vouloir supprimer ce bien ?',
+    delete_property_desc: 'Cette action est irréversible.',
+    delete: 'Supprimer',
+    cancel: 'Annuler',
 
     tenants_title: 'Locataires',
     tenants_count: (n: number) => `${n} locataire${n > 1 ? 's' : ''}`,
