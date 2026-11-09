@@ -13,6 +13,7 @@ import ContractsPage from "@/pages/ContractsPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import TenantDetailPage from "@/pages/TenantDetailPage";
 import NotFound from "@/pages/NotFound";
+import { useAuthStore } from "@/store/authStore";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
